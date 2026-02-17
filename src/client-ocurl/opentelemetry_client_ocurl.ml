@@ -8,8 +8,6 @@ module OTELC = Opentelemetry_client
 module OTEL = Opentelemetry
 open Common_
 
-let n_bytes_sent : int Atomic.t = Atomic.make 0
-
 type error = OTELC.Export_error.t
 
 open struct
@@ -138,5 +136,3 @@ let with_setup ?after_shutdown ?(config : Config.t = Config.make ())
     Fun.protect f ~finally:(fun () -> shutdown_and_wait ?after_shutdown exp)
   ) else
     f ()
-
-let[@inline] n_bytes_sent () = Atomic.get n_bytes_sent

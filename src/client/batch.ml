@@ -11,6 +11,7 @@ type 'a t = {
   batch: int;  (** Minimum size to batch before popping *)
   high_watermark: int;  (** Size above which we start dropping signals *)
   timeout: Mtime.span option;
+  n_dropped: int Atomic.t;
 }
 
 let max_batch_size = 100_000
@@ -45,6 +46,7 @@ let make ?(batch = 100) ?high_watermark ?mtime ?timeout () : _ t =
     batch;
     timeout;
     high_watermark;
+    n_dropped = Atomic.make 0;
   }
 
 let timeout_expired_ ~mtime ~timeout (self : _ state) : bool =
@@ -94,34 +96,42 @@ let push (self : _ t) elems : [ `Dropped | `Ok ] =
   if elems = [] then
     `Ok
   else (
-    let now = lazy (Mtime_clock.now ()) in
-    Util_atomic.update_cas self.st @@ fun state ->
-    if state.size >= self.high_watermark then
-      ( (* drop this to prevent queue from growing too fast *)
-        `Dropped,
-        state )
-    else (
-      let start =
-        if state.size = 0 && Option.is_some self.timeout then
-          Lazy.force now
-        else
-          state.start
-      in
+    let now = Mtime_clock.now () in
+    let res =
+      Util_atomic.update_cas self.st @@ fun state ->
+      if state.size >= self.high_watermark then
+        ( (* drop this to prevent queue from growing too fast *)
+          `Dropped,
+          state )
+      else (
+        let start =
+          if state.size = 0 && Option.is_some self.timeout then
+            now
+          else
+            state.start
+        in
 
-      (* add to queue *)
-      let state =
-        {
-          size = state.size + List.length elems;
-          q = List.rev_append elems state.q;
-          start;
-        }
-      in
+        (* add to queue *)
+        let state =
+          {
+            size = state.size + List.length elems;
+            q = List.rev_append elems state.q;
+            start;
+          }
+        in
 
-      `Ok, state
-    )
+        `Ok, state
+      )
+    in
+    (match res with
+    | `Dropped -> Atomic.incr self.n_dropped
+    | `Ok -> ());
+    res
   )
 
 let[@inline] push' self elems = ignore (push self elems : [ `Dropped | `Ok ])
+
+let[@inline] n_dropped self = Atomic.get self.n_dropped
 
 module Internal_ = struct
   let mtime_dummy_ = mtime_dummy_

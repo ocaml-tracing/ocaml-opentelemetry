@@ -56,8 +56,11 @@ module Main_set = struct
     | Some s -> s
     | None ->
       let s = create () in
-      if Atomic.compare_and_set cur_set_ None (Some s) then
+      if Atomic.compare_and_set cur_set_ None (Some s) then (
+        (match Main_exporter.get () with
+        | Some exp -> add_to_exporter exp s
+        | None -> ());
         s
-      else
+      ) else
         get ()
 end

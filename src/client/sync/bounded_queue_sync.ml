@@ -43,8 +43,7 @@ end = struct
     a value of type [bool] which OCaml's memory model should guarantee. *)
   let[@inline] closed self = self.closed
 
-  (* NOTE: race condition here is also benign in absence of tearing. *)
-  let[@inline] size self = Queue.length self.q
+  let[@inline] size self = UM.protect self.mutex (fun () -> Queue.length self.q)
 
   let close (self : _ t) =
     UM.protect self.mutex @@ fun () ->

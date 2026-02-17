@@ -5,9 +5,6 @@
 
 module Config = Config
 
-val n_bytes_sent : unit -> int
-(** Global counter of bytes sent (or attempted to be sent) *)
-
 val consumer :
   ?config:Config.t -> unit -> Opentelemetry_client.Consumer.any_signal_l_builder
 (** Consumer that pulls from a queue *)

@@ -11,9 +11,11 @@ let[@inline] trigger self = Condition.broadcast self.cond
 
 let delete = ignore
 
-let wait self =
+let wait self ~should_keep_waiting =
   Mutex.lock self.mutex;
-  Condition.wait self.cond self.mutex;
+  while should_keep_waiting () do
+    Condition.wait self.cond self.mutex
+  done;
   Mutex.unlock self.mutex
 
 (** Ensure we get signalled when the queue goes from empty to non-empty *)

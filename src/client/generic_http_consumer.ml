@@ -2,9 +2,6 @@ open Common_
 
 type error = Export_error.t
 
-(** Number of errors met during export *)
-let n_errors = Atomic.make 0
-
 module type IO = Generic_io.S_WITH_CONCURRENCY
 
 module type HTTPC = sig
@@ -133,8 +130,8 @@ end = struct
   let consumer ?override_n_workers ~ticker_task ~(config : Http_config.t) () :
       Consumer.any_signal_l_builder =
     let n_workers =
-      min 2
-        (max 500
+      max 2
+        (min 500
            (match override_n_workers, config.http_concurrency_level with
            | Some n, _ -> n
            | None, Some n -> n

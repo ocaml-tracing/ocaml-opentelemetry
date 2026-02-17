@@ -56,6 +56,9 @@ val push' : 'a t -> 'a list -> unit
 val cur_size : _ t -> int
 (** Number of elements in the current batch *)
 
+val n_dropped : _ t -> int
+(** Number of elements dropped because the batch exceeded its high watermark *)
+
 (**/**)
 
 module Internal_ : sig

@@ -34,7 +34,16 @@ let trigger (self : t) : unit =
   else if not (Atomic.exchange self.notified true) then
     Lwt_unix.send_notification self.notification
 
-let wait (self : t) : unit Lwt.t = Lwt_condition.wait self.cond
+let wait (self : t) ~should_keep_waiting : unit Lwt.t =
+  let open Lwt.Syntax in
+  let rec loop () =
+    if should_keep_waiting () then
+      let* () = Lwt_condition.wait self.cond in
+      loop ()
+    else
+      Lwt.return_unit
+  in
+  loop ()
 
 let register_bounded_queue (self : t) (q : _ Bounded_queue.Recv.t) : unit =
   Bounded_queue.Recv.on_non_empty q (fun () -> trigger self)

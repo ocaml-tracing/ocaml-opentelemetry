@@ -38,17 +38,19 @@ struct
       { mutex = Eio.Mutex.create (); cond = Eio.Condition.create () }
 
     let trigger self =
-      (* FIXME: this might be triggered from other threads!! how do we
-         ensure it runs in the Eio thread? *)
+      (* Eio.Condition.broadcast is lock-free since eio 0.8 (ocaml-multicore/eio#397)
+         and safe to call from other threads/domains and signal handlers. *)
       Eio.Condition.broadcast self.cond
 
     let delete self =
       trigger self;
       ()
 
-    let wait self =
+    let wait self ~should_keep_waiting =
       Eio.Mutex.lock self.mutex;
-      Eio.Condition.await self.cond self.mutex;
+      while should_keep_waiting () do
+        Eio.Condition.await self.cond self.mutex
+      done;
       Eio.Mutex.unlock self.mutex
 
     (** Ensure we get signalled when the queue goes from empty to non-empty *)
@@ -111,7 +113,9 @@ struct
         in
         Error err
       | Ok (resp, body) ->
-        let body = Eio.Buf_read.(parse_exn take_all) body ~max_size:max_int in
+        let body =
+          Eio.Buf_read.(parse_exn take_all) body ~max_size:(10 * 1024 * 1024)
+        in
         let code = Response.status resp |> Code.code_of_status in
         if not (Code.is_error code) then (
           match decode with

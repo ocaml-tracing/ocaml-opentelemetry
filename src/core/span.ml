@@ -92,6 +92,8 @@ let to_span_link (self : t) : Span_link.t =
 let[@inline] to_span_ctx (self : t) : Span_ctx.t =
   Span_ctx.make ~trace_id:(trace_id self) ~parent_id:(id self) ()
 
+(* Note: a span must not be concurrently modified from multiple
+   threads or domains. *)
 let[@inline] add_event self ev : unit =
   if is_not_dummy self then span_set_events self (ev :: self.events)
 

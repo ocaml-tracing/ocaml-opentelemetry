@@ -13,7 +13,7 @@ module type S = sig
 
   val trigger : t -> unit
 
-  val wait : t -> unit IO.t
+  val wait : t -> should_keep_waiting:(unit -> bool) -> unit IO.t
 
   val register_bounded_queue : t -> _ Bounded_queue.Recv.t -> unit
 end

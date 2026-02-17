@@ -151,16 +151,21 @@ let client ?(tracer = Otel.Tracer.dynamic_main) ?(span : Otel.Span.t option)
          [Cohttp_lwt.S.Client]. *)
     include C
 
-    let attrs_for ~uri ~meth:_ () =
+    let attrs_for ~uri ~meth () =
       [
-        "http.method", `String (Code.string_of_method `GET);
+        "http.method", `String (Code.string_of_method meth);
         "http.url", `String (Uri.to_string uri);
       ]
 
     let context_for ~uri ~meth =
-      let trace_id = Option.map Otel.Span.trace_id span in
+      let parent =
+        match span with
+        | Some _ -> span
+        | None -> Otel.Ambient_span.get ()
+      in
+      let trace_id = Option.map Otel.Span.trace_id parent in
       let attrs = attrs_for ~uri ~meth () in
-      trace_id, span, attrs
+      trace_id, parent, attrs
 
     let add_traceparent (span : Otel.Span.t) headers =
       let module Traceparent = Otel.Trace_context.Traceparent in

@@ -77,7 +77,11 @@ let of_w3c_trace_context bs : _ result =
       with Invalid_argument msg -> invalid_arg (spf "in span id: %s" msg)
     in
     if Bytes.get bs 52 <> '-' then invalid_arg "expected '-' after parent_id";
-    let sampled = int_of_string_opt (Bytes.sub_string bs 53 2) = Some 1 in
+    let sampled =
+      match int_of_string_opt ("0x" ^ Bytes.sub_string bs 53 2) with
+      | Some flags -> flags land 1 = 1
+      | None -> false
+    in
 
     (* ignore other flags *)
     Ok (make ~remote:true ~sampled ~trace_id ~parent_id ())

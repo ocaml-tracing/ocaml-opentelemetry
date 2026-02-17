@@ -87,7 +87,11 @@ end = struct
           shutdown_worker self;
           IO.return ()
         | Active ->
-          let* () = Notifier.wait self.notify in
+          let* () =
+            Notifier.wait self.notify ~should_keep_waiting:(fun () ->
+                Bounded_queue.Recv.size self.q = 0
+                && Atomic.get self.status = Active)
+          in
           loop ())
     in
 
