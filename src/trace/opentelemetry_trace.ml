@@ -1,35 +1,28 @@
 module Otel = Opentelemetry
-module Otrace = Trace_core (* ocaml-trace *)
-module TLS = Thread_local_storage
-
-open struct
-  let spf = Printf.sprintf
-end
+module Trace = Trace_core (* ocaml-trace *)
 
 module Well_known = struct end
 
 let on_internal_error =
   ref (fun msg -> Printf.eprintf "error in Opentelemetry_trace: %s\n%!" msg)
 
-module Span_info = struct
-  type t = {
-    start_time: int64;
-    name: string;
-    scope: Otel.Scope.t;
-    parent: Otel.Span_ctx.t option;
-  }
-end
+type span_info = {
+  start_time: int64;
+  name: string;
+  scope: Otel.Scope.t;
+  parent: Otel.Span_ctx.t option;
+}
 
-type Otrace.span += Span_otel of Span_info.t
+type Trace.span += Span_otel of span_info
 
-type Otrace.extension_event +=
-  | Ev_link_span of Otrace.span * Otrace.span
-  | Ev_set_span_kind of Otrace.span * Otel.Span_kind.t
-  | Ev_record_exn of Otrace.span * exn * Printexc.raw_backtrace
+type Trace.extension_event +=
+  | Ev_link_span of Trace.span * Trace.span
+  | Ev_set_span_kind of Trace.span * Otel.Span_kind.t
+  | Ev_record_exn of Trace.span * exn * Printexc.raw_backtrace
 
 module Internal = struct
-  let enter_span' ?(parent_span : Otrace.span option) ~__FUNCTION__ ~__FILE__
-      ~__LINE__ ~data name : Span_info.t =
+  let enter_span' ?(parent_span : Trace.span option) ~__FUNCTION__ ~__FILE__
+      ~__LINE__ ~data name : span_info =
     let open Otel in
     let span_id = Span_id.create () in
 
@@ -74,10 +67,10 @@ module Internal = struct
         :: ("code.lineno", `Int __LINE__)
         :: attrs_function);
 
-    { Span_info.start_time; name; scope = new_scope; parent }
+    { start_time; name; scope = new_scope; parent }
 
-  let exit_span_ ({ name; start_time; scope; parent } : Span_info.t) :
-      Otel.Span.t =
+  let exit_span_ ({ name; start_time; scope; parent } : span_info) : Otel.Span.t
+      =
     let open Otel in
     let end_time = Timestamp_ns.now_unix_ns () in
     let attrs = Scope.attrs scope in
@@ -91,10 +84,10 @@ module Internal = struct
     |> fst
 
   let enter_span _st ~__FUNCTION__ ~__FILE__ ~__LINE__ ~level:_ ~params:_ ~data
-      ~parent name : Otrace.span =
+      ~parent name : Trace.span =
     let parent_span =
       match parent with
-      | Otrace.P_some sp -> Some sp
+      | Trace.P_some sp -> Some sp
       | _ -> None
     in
     let span_info =
@@ -102,14 +95,14 @@ module Internal = struct
     in
     Span_otel span_info
 
-  let exit_span _st (span : Otrace.span) =
+  let exit_span _st (span : Trace.span) =
     match span with
     | Span_otel span_info ->
       let otel_span = exit_span_ span_info in
       Otel.Trace.emit [ otel_span ]
     | _ -> ()
 
-  let add_data_to_span _st (span : Otrace.span) data =
+  let add_data_to_span _st (span : Trace.span) data =
     match span with
     | Span_otel span_info ->
       Otel.Scope.add_attrs span_info.scope (fun () -> data)
@@ -129,7 +122,7 @@ module Internal = struct
     Otel.Logs.emit [ log ]
 
   let metric _st ~level:_ ~params:_ ~data:attrs name v =
-    let open Otrace.Core_ext in
+    let open Trace.Core_ext in
     match v with
     | Metric_int i ->
       let m = Otel.Metrics.(gauge ~name [ int ~attrs i ]) in
@@ -149,29 +142,29 @@ module Internal = struct
       Otel.Scope.record_exception sb.scope exn bt
     | _ -> ()
 
-  let callbacks : unit Otrace.Collector.Callbacks.t =
-    Otrace.Collector.Callbacks.make ~enter_span ~exit_span ~add_data_to_span
+  let callbacks : unit Trace.Collector.Callbacks.t =
+    Trace.Collector.Callbacks.make ~enter_span ~exit_span ~add_data_to_span
       ~message ~metric ~extension ()
 end
 
-let link_spans (sp1 : Otrace.span) (sp2 : Otrace.span) : unit =
-  if Otrace.enabled () then Otrace.extension_event @@ Ev_link_span (sp1, sp2)
+let link_spans (sp1 : Trace.span) (sp2 : Trace.span) : unit =
+  if Trace.enabled () then Trace.extension_event @@ Ev_link_span (sp1, sp2)
 
 let set_span_kind sp k : unit =
-  if Otrace.enabled () then Otrace.extension_event @@ Ev_set_span_kind (sp, k)
+  if Trace.enabled () then Trace.extension_event @@ Ev_set_span_kind (sp, k)
 
 let record_exception sp exn bt : unit =
-  if Otrace.enabled () then Otrace.extension_event @@ Ev_record_exn (sp, exn, bt)
+  if Trace.enabled () then Trace.extension_event @@ Ev_record_exn (sp, exn, bt)
 
-let with_ambient_span (sp : Otrace.span) f =
+let with_ambient_span (sp : Trace.span) f =
   match sp with
   | Span_otel sb -> Otel.Scope.with_ambient_scope sb.scope f
   | _ -> f ()
 
-let collector () : Otrace.collector =
+let collector () : Trace.collector =
   Trace_core.Collector.C_some ((), Internal.callbacks)
 
-let setup () = Otrace.setup_collector @@ collector ()
+let setup () = Trace.setup_collector @@ collector ()
 
 let setup_with_otel_backend b : unit =
   Otel.Collector.set_backend b;
