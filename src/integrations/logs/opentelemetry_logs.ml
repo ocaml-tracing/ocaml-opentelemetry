@@ -23,9 +23,6 @@ let log_level_to_severity (level : Logs.level) : Otel.Logs.severity =
 (* Logs Util *)
 (*****************************************************************************)
 
-let create_tag (tag : string) : string Logs.Tag.def =
-  Logs.Tag.def tag Format.pp_print_string
-
 let emit_telemetry_tag =
   Logs.Tag.def ~doc:"Whether or not to emit this log via telemetry"
     "emit_telemetry" Format.pp_print_bool
