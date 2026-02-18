@@ -7,7 +7,8 @@ let test_exporter : Otel.Exporter.t =
   let open Otel.Exporter in
   {
     (dummy ()) with
-    emit_spans = Opentelemetry_emitter.To_list.to_list spans_emitted;
+    emit_spans =
+      Opentelemetry_emitter.To_list.to_list ~signal_name:"spans" spans_emitted;
   }
 
 let with_test_exporter f =

@@ -8,6 +8,7 @@
 exception Closed
 
 type -'a t = {
+  signal_name: string;  (** Description of what signal is emitted *)
   enabled: unit -> bool;
       (** Return [true] if [emit] has a chance of doing something with the
           signals it's given. *)
@@ -20,6 +21,11 @@ type -'a t = {
       (** True if the emitter is already closed. Beware TOCTOU bugs. *)
   flush_and_close: unit -> unit;
       (** Flush internally buffered signals, then close. *)
+  self_metrics:
+    now:Opentelemetry_util.Timestamp_ns.t ->
+    unit ->
+    Opentelemetry_proto.Metrics.metric list;
+      (** metrics about the emitter itself. *)
 }
 (** An emitter for values of type ['a]. *)
 
@@ -32,6 +38,8 @@ let[@inline] tick (self : _ t) ~mtime : unit = self.tick ~mtime
 let[@inline] closed self : bool = self.closed ()
 
 let[@inline] flush_and_close (self : _ t) : unit = self.flush_and_close ()
+
+let[@inline] self_metrics self ~now : _ list = self.self_metrics ~now ()
 
 (** [map f emitter] returns a new emitter that applies [f] to signals item-wise
     before passing them to [emitter] *)
@@ -56,9 +64,9 @@ let tap (f : 'a -> unit) (self : 'a t) : 'a t =
   in
   { self with emit }
 
-(** [make_simple ~emit ()] is an emitter that calls [emit]. *)
-let make_simple ?tick ?closed ?enabled ?(flush_and_close = ignore) ~emit () :
-    _ t =
+(** [make ~emit ()] is an emitter that calls [emit]. *)
+let make ?tick ?closed ?enabled ?(flush_and_close = ignore)
+    ?(self_metrics = fun ~now:_ () -> []) ~signal_name ~emit () : _ t =
   let tick =
     match tick with
     | None -> fun ~mtime:_ -> ()
@@ -71,14 +79,16 @@ let make_simple ?tick ?closed ?enabled ?(flush_and_close = ignore) ~emit () :
     | None, Some f -> (fun () -> not (f ())), f
     | Some f1, Some f2 -> f1, f2
   in
-  { tick; emit; flush_and_close; closed; enabled }
+  { signal_name; tick; emit; flush_and_close; closed; enabled; self_metrics }
 
 (** Dummy emitter, doesn't accept or emit anything. *)
 let dummy : _ t =
   {
+    signal_name = "dummy";
     enabled = (fun () -> false);
     emit = ignore;
     tick = (fun ~mtime:_ -> ());
     closed = (fun () -> true);
     flush_and_close = ignore;
+    self_metrics = (fun ~now:_ () -> []);
   }

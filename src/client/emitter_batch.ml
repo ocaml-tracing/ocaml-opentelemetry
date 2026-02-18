@@ -12,8 +12,18 @@ let wrap_emitter_with_batch (self : _ Batch.t) (e : _ Emitter.t) : _ Emitter.t =
      then [e] itself will be closed. *)
   let closed_here = Atomic.make false in
 
+  let signal_name = e.signal_name in
   let enabled () = (not (Atomic.get closed_here)) && e.enabled () in
   let closed () = Atomic.get closed_here || e.closed () in
+
+  let dropped_name = Printf.sprintf "otel.sdk.%s.batch.dropped" signal_name in
+  let self_metrics ~now () =
+    let m =
+      Opentelemetry_core.Metrics.(
+        sum ~name:dropped_name [ int ~now (Batch.n_dropped self) ])
+    in
+    m :: e.self_metrics ~now ()
+  in
   let flush_and_close () =
     if not (Atomic.exchange closed_here true) then (
       (* NOTE: we need to close this wrapping emitter first, to prevent
@@ -52,7 +62,15 @@ let wrap_emitter_with_batch (self : _ Batch.t) (e : _ Emitter.t) : _ Emitter.t =
     )
   in
 
-  { Emitter.closed; enabled; flush_and_close; tick; emit }
+  {
+    Emitter.closed;
+    signal_name;
+    self_metrics;
+    enabled;
+    flush_and_close;
+    tick;
+    emit;
+  }
 
 let add_batching ~timeout ~batch_size (emitter : 'a Emitter.t) : 'a Emitter.t =
   let b = Batch.make ~batch:batch_size ~timeout () in

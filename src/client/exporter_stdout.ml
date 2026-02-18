@@ -47,12 +47,13 @@ let stdout ?(clock = OTEL.Clock.ptime_clock) () : OTEL.Exporter.t =
   let active, trigger = Aswitch.create () in
   let tick () = Cb_set.trigger ticker in
 
-  let mk_emitter pp_signal =
+  let mk_emitter ~signal_name pp_signal =
     let emit l =
       if Aswitch.is_off active then raise Emitter.Closed;
       pp_vlist mutex pp_signal out l
     in
     let enabled () = Aswitch.is_on active in
+    let self_metrics ~now:_ () = [] in
     let tick ~mtime:_ = () in
     let flush_and_close () =
       if Aswitch.is_on active then
@@ -60,12 +61,20 @@ let stdout ?(clock = OTEL.Clock.ptime_clock) () : OTEL.Exporter.t =
         Format.pp_print_flush out ()
     in
     let closed () = Aswitch.is_off active in
-    { Emitter.emit; closed; enabled; tick; flush_and_close }
+    {
+      Emitter.emit;
+      signal_name;
+      self_metrics;
+      closed;
+      enabled;
+      tick;
+      flush_and_close;
+    }
   in
 
-  let emit_spans = mk_emitter pp_span in
-  let emit_logs = mk_emitter pp_log in
-  let emit_metrics = mk_emitter pp_metric in
+  let emit_spans = mk_emitter ~signal_name:"spans" pp_span in
+  let emit_logs = mk_emitter ~signal_name:"logs" pp_log in
+  let emit_metrics = mk_emitter ~signal_name:"metrics" pp_metric in
 
   let self_metrics () = [] in
   let shutdown () =

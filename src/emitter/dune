@@ -2,6 +2,8 @@
  (name opentelemetry_emitter)
  (public_name opentelemetry.emitter)
  (libraries
+  (re_export opentelemetry.proto)
+  (re_export opentelemetry.util)
   (re_export opentelemetry.atomic)
   (re_export mtime))
  (flags :standard -open Opentelemetry_atomic)

@@ -106,17 +106,20 @@ module Send = struct
   (** Turn the writing end of the queue into an emitter.
       @param close_queue_on_close
         if true, closing the emitter will close the queue *)
-  let to_emitter ~close_queue_on_close (self : 'a t) :
+  let to_emitter ~signal_name ~close_queue_on_close (self : 'a t) :
       'a Opentelemetry_emitter.Emitter.t =
     let closed () = closed self in
     let enabled () = not (closed ()) in
     let emit x = if x <> [] then push self x in
     let tick ~mtime:_ = () in
 
+    (* the exporter will emit these, the queue is shared *)
+    let self_metrics ~now:_ () = [] in
+
     (* NOTE: we cannot actually flush, only close. Emptying the queue is
      fundamentally asynchronous because it's done by consumers *)
     let flush_and_close () = if close_queue_on_close then close self in
-    { closed; enabled; emit; tick; flush_and_close }
+    { signal_name; closed; enabled; emit; tick; flush_and_close; self_metrics }
 end
 
 type 'a t = {

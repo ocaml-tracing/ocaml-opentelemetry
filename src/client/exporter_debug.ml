@@ -17,15 +17,15 @@ let debug ?(clock = OTEL.Clock.ptime_clock) ?(out = Format.err_formatter) () :
     active = (fun () -> active);
     clock;
     emit_spans =
-      Emitter.make_simple () ~emit:(fun sp ->
+      Emitter.make ~signal_name:"spans" () ~emit:(fun sp ->
           List.iter (Format.fprintf out "SPAN: %a@." Trace.pp_span) sp);
     emit_logs =
-      Emitter.make_simple () ~emit:(fun log ->
+      Emitter.make ~signal_name:"logs" () ~emit:(fun log ->
           List.iter
             (Format.fprintf out "LOG: %a@." Proto.Logs.pp_log_record)
             log);
     emit_metrics =
-      Emitter.make_simple () ~emit:(fun m ->
+      Emitter.make ~signal_name:"metrics" () ~emit:(fun m ->
           List.iter (Format.fprintf out "METRIC: %a@." Metrics.pp_metric) m);
     on_tick = Cb_set.register ticker;
     tick = (fun () -> Cb_set.trigger ticker);

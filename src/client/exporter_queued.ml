@@ -17,18 +17,21 @@ module BQ_emitters = struct
 
   let logs_emitter_of_bq (q : OTEL.Any_signal_l.t Bounded_queue.Send.t) :
       _ OTEL.Emitter.t =
-    Bounded_queue.Send.to_emitter q ~close_queue_on_close:false
+    Bounded_queue.Send.to_emitter q ~signal_name:"logs"
+      ~close_queue_on_close:false
     |> Opentelemetry_emitter.Emitter.flat_map OTEL.Any_signal_l.of_logs_or_empty
 
   let spans_emitter_of_bq (q : OTEL.Any_signal_l.t Bounded_queue.Send.t) :
       _ OTEL.Emitter.t =
-    Bounded_queue.Send.to_emitter q ~close_queue_on_close:false
+    Bounded_queue.Send.to_emitter q ~signal_name:"spans"
+      ~close_queue_on_close:false
     |> Opentelemetry_emitter.Emitter.flat_map
          OTEL.Any_signal_l.of_spans_or_empty
 
   let metrics_emitter_of_bq (q : OTEL.Any_signal_l.t Bounded_queue.Send.t) :
       _ OTEL.Emitter.t =
-    Bounded_queue.Send.to_emitter q ~close_queue_on_close:false
+    Bounded_queue.Send.to_emitter q ~signal_name:"metrics"
+      ~close_queue_on_close:false
     |> Opentelemetry_emitter.Emitter.flat_map
          OTEL.Any_signal_l.of_metrics_or_empty
 end
@@ -64,7 +67,7 @@ let create ~clock ~(q : OTEL.Any_signal_l.t Bounded_queue.t)
         [ OTEL.Metrics.int ~now (Bounded_queue.Recv.high_watermark q.recv) ]
     and m_discarded =
       OTEL.Metrics.sum ~is_monotonic:true
-        ~name:"otel_ocaml.exporter_queue.discarded"
+        ~name:"otel.sdk.exporter_queue.discarded"
         [ OTEL.Metrics.int ~now (Bounded_queue.Recv.num_discarded q.recv) ]
     in
     m_size :: m_cap :: m_discarded :: Consumer.self_metrics consumer ~clock

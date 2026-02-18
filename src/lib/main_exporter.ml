@@ -44,7 +44,8 @@ module Util = struct
       exporter. When this emitter is used to [emit signals], the current
       exporter is looked up, [get_emitter exporter] is then used to locate the
       relevant emitter [e'], and [signals] is in turn emitted in [e']. *)
-  let dynamic_forward_emitter_to_main_exporter ~get_emitter () : _ Emitter.t =
+  let dynamic_forward_emitter_to_main_exporter ~signal_name
+      ~(get_emitter : Exporter.t -> _ Emitter.t) () : _ Emitter.t =
     let enabled () = present () in
     let closed () = not (enabled ()) in
     let flush_and_close () = () in
@@ -52,6 +53,11 @@ module Util = struct
       match get () with
       | None -> ()
       | Some exp -> Exporter.tick exp ~mtime
+    in
+    let self_metrics ~now () =
+      match get () with
+      | None -> []
+      | Some exp -> (get_emitter exp).self_metrics ~now ()
     in
     let emit signals =
       if signals <> [] then (
@@ -62,7 +68,8 @@ module Util = struct
           Emitter.emit emitter signals
       )
     in
-    { Emitter.enabled; closed; emit; tick; flush_and_close }
+    Emitter.make ~signal_name ~enabled ~closed ~self_metrics ~flush_and_close
+      ~tick ~emit ()
 end
 
 (** Aswitch of the current exporter, or {!Aswitch.dummy} *)
@@ -77,15 +84,15 @@ let[@inline] active () : Aswitch.t =
     @since NEXT_RELEASE *)
 let dynamic_forward_to_main_exporter : Exporter.t =
   let emit_logs =
-    Util.dynamic_forward_emitter_to_main_exporter ()
+    Util.dynamic_forward_emitter_to_main_exporter () ~signal_name:"logs"
       ~get_emitter:Exporter.(fun e -> e.emit_logs)
   in
   let emit_metrics =
-    Util.dynamic_forward_emitter_to_main_exporter ()
+    Util.dynamic_forward_emitter_to_main_exporter () ~signal_name:"metrics"
       ~get_emitter:Exporter.(fun e -> e.emit_metrics)
   in
   let emit_spans =
-    Util.dynamic_forward_emitter_to_main_exporter ()
+    Util.dynamic_forward_emitter_to_main_exporter () ~signal_name:"spans"
       ~get_emitter:Exporter.(fun e -> e.emit_spans)
   in
   let on_tick f =

@@ -77,4 +77,12 @@ let[@inline] shutdown (self : t) : unit = self.shutdown ()
 
 let (cleanup [@deprecated "use shutdown instead"]) = shutdown
 
-let[@inline] self_metrics (self : t) : _ list = self.self_metrics ()
+let self_metrics (self : t) : _ list =
+  let now = Clock.now self.clock in
+  List.flatten
+    [
+      self.self_metrics ();
+      self.emit_spans.self_metrics ~now ();
+      self.emit_logs.self_metrics ~now ();
+      self.emit_metrics.self_metrics ~now ();
+    ]
