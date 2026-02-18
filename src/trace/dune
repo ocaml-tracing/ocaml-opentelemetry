@@ -3,4 +3,4 @@
  (public_name opentelemetry.trace)
  (synopsis "Use opentelemetry as a collector for trace")
  (optional)
- (libraries opentelemetry.ambient-context trace.core opentelemetry))
+ (libraries ambient-context.core ambient-context trace.core opentelemetry))

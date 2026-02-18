@@ -1,7 +1,0 @@
-(library
- (name opentelemetry_ambient_context_lwt)
- (public_name opentelemetry.ambient-context.lwt)
- (optional) ; lwt
- (synopsis
-  "Storage backend for ambient-context using Lwt's sequence-associated storage")
- (libraries lwt opentelemetry.ambient-context thread-local-storage))

@@ -3,16 +3,10 @@
   ; Make the binaries for the test emitters available on the path for the components defined in this dir.
   ; See https://dune.readthedocs.io/en/stable/reference/dune/env.html
   (binaries
-   (../bin/emit_logs_cohttp.exe as emit_logs_cohttp)
-   )))
+   (../bin/emit_logs_cohttp.exe as emit_logs_cohttp))))
 
 (tests
  (names test_logs_e2e)
  (package opentelemetry-logs)
- (libraries
-   opentelemetry
-   opentelemetry-logs
-   signal_gatherer
-   alcotest)
-  (deps %{bin:emit_logs_cohttp})
-)
+ (libraries opentelemetry opentelemetry-logs signal_gatherer alcotest)
+ (deps %{bin:emit_logs_cohttp}))

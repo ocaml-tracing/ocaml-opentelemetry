@@ -1,5 +1,5 @@
 
-# Opentelemetry [![build](https://github.com/imandra-ai/ocaml-opentelemetry/actions/workflows/main.yml/badge.svg)](https://github.com/imandra-ai/ocaml-opentelemetry/actions/workflows/main.yml)
+# Opentelemetry [![build](https://github.com/ocaml-tracing/ocaml-opentelemetry/actions/workflows/main.yml/badge.svg)](https://github.com/ocaml-tracing/ocaml-opentelemetry/actions/workflows/main.yml)
 
 This project provides an API for instrumenting server software
 using [opentelemetry](https://opentelemetry.io/docs), as well as
@@ -28,7 +28,7 @@ MIT
   * [x] batching, perf, etc.
 - [ ] async collector relying on ocurl-multi
 - [ ] interface with `logs` (carry context around)
-- [x] implicit scope (via vendored `ambient-context`, see `opentelemetry.ambient-context`)
+- [x] implicit scope (via [`ambient-context`](https://github.com/ocaml-tracing/ambient-context))
 
 ## Use
 
@@ -65,16 +65,17 @@ let main () =
   Otel.Globals.service_name := "my_service";
   Otel.GC_metrics.basic_setup();
 
-  Opentelemetry_ambient_context.set_storage_provider (Opentelemetry_ambient_context_lwt.storage ());
+  (* install Lwt's fiber-local storage as the ambient context backend *)
+  Ambient_context.set_current_storage Ambient_context_lwt.storage;
   Opentelemetry_client_ocurl.with_setup () @@ fun () ->
   (* … *)
   foo ();
   (* … *)
 ```
 
-  [`service_name`]: <https://v3.ocaml.org/p/opentelemetry/0.5/doc/Opentelemetry/Globals/index.html#val-service_name>
-  [`Collector`]: <https://v3.ocaml.org/p/opentelemetry/0.5/doc/Opentelemetry/Collector/index.html>
-  [ambient-context]: now vendored as `opentelemetry.ambient-context`, formerly <https://v3.ocaml.org/p/ambient-context>
+  [`service_name`]: <https://github.com/ocaml-tracing/ocaml-opentelemetry>
+  [`Collector`]: <https://github.com/ocaml-tracing/ocaml-opentelemetry>
+  [ambient-context]: <https://github.com/ocaml-tracing/ambient-context>
 
 ## Configuration
 
@@ -93,7 +94,7 @@ or the datadog agent).
 
 Do note that this backend uses a thread pool and is incompatible
 with uses of `fork` on some Unixy systems.
-See [#68](https://github.com/imandra-ai/ocaml-opentelemetry/issues/68) for a possible workaround.
+See [#68](https://github.com/ocaml-tracing/ocaml-opentelemetry/issues/68) for a possible workaround.
 
 ## Collector opentelemetry-client-cohttp-lwt
 
@@ -103,7 +104,7 @@ inside a `Lwt_main.run` scope.
 
 ## Opentelemetry-trace
 
-The optional library `opentelemetry.trace`, present if [trace](https://github.com/c-cube/trace) is
+The optional library `opentelemetry.trace`, present if [trace](https://github.com/ocaml-tracing/ocaml-trace) is
 installed, provides a collector for `trace`. This collector forwards and translates
 events from `trace` into `opentelemetry`. It's only useful if there also is also a OTEL collector.
 

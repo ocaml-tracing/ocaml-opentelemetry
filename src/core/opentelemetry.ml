@@ -4,7 +4,7 @@ open struct
   let spf = Printf.sprintf
 
   module Atomic = Opentelemetry_atomic.Atomic
-  module Ambient_context = Opentelemetry_ambient_context
+  module Ambient_context = Ambient_context
 end
 
 module Lock = Lock
@@ -961,7 +961,7 @@ module Scope : sig
   (** Set the span's kind.
       @since 0.11 *)
 
-  val ambient_scope_key : t Ambient_context.key
+  val ambient_scope_key : t Ambient_context.Context.key
   (** The opaque key necessary to access/set the ambient scope with
       {!Ambient_context}. *)
 
@@ -1097,7 +1097,8 @@ end = struct
   let set_kind (scope : t) (k : Span_kind.t) : unit =
     if Collector.has_backend () then scope.items <- Span_kind (k, scope.items)
 
-  let ambient_scope_key : t Ambient_context.key = Ambient_context.create_key ()
+  let ambient_scope_key : t Ambient_context.Context.key =
+    Ambient_context.new_key ()
 
   let get_ambient_scope ?scope () : t option =
     match scope with
@@ -1105,7 +1106,7 @@ end = struct
     | None -> Ambient_context.get ambient_scope_key
 
   let[@inline] with_ambient_scope (sc : t) (f : unit -> 'a) : 'a =
-    Ambient_context.with_binding ambient_scope_key sc (fun _ -> f ())
+    Ambient_context.with_key_bound_to ambient_scope_key sc f
 end
 
 (** {2 Traces} *)

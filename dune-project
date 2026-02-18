@@ -40,6 +40,7 @@
     (>= 3.0)
     (< 4.0)))
   (ocaml-lsp-server :with-dev-setup)
+  (ambient-context (and (>= 0.2) (< 0.3)))
   (ocamlformat
    (and
     :with-dev-setup
@@ -48,7 +49,7 @@
  (depopts trace lwt eio)
  (conflicts
   (trace
-   (< 0.10)))
+   (< 0.11)))
  (tags
   (instrumentation tracing opentelemetry datadog jaeger)))
 
