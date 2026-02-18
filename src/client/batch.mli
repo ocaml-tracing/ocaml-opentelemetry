@@ -47,6 +47,6 @@ val pop_if_ready : ?force:bool -> now:Mtime.t -> 'a t -> 'a list option
       batches before exit or because the user asks for it *)
 
 val push : 'a t -> 'a list -> [ `Dropped | `Ok ]
-(** [push b xs] is [`Ok] if it succeeds in pushing the values in [xs] into the batch
-    [b], or [`Dropped] if the current size of the batch has exceeded the high water
-    mark determined by the [batch] argument to [{!make}]. ) *)
+(** [push b xs] is [`Ok] if it succeeds in pushing the values in [xs] into the
+    batch [b], or [`Dropped] if the current size of the batch has exceeded the
+    high water mark determined by the [batch] argument to [{!make}]. ) *)

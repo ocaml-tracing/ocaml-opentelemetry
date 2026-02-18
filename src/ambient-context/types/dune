@@ -1,4 +1,0 @@
-(library
- (name opentelemetry_ambient_context_types)
- (public_name opentelemetry.ambient-context.types)
- (libraries hmap thread-local-storage))

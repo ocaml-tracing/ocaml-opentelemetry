@@ -1,7 +1,0 @@
-(library
- (name opentelemetry_ambient_context_eio)
- (public_name opentelemetry.ambient-context.eio)
- (synopsis
-  "Storage backend for ambient-context using Eio's fibre-local storage")
- (optional) ; eio
- (libraries eio hmap opentelemetry.ambient-context thread-local-storage))

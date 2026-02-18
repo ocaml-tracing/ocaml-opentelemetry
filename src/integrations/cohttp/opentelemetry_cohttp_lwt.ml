@@ -145,14 +145,21 @@ let client ?(scope : Otel.Scope.t option) (module C : Cohttp_lwt.S.Client) =
 
     (*   These types and values are not customized by our client, but are required to satisfy
          [Cohttp_lwt.S.Client]. *)
-    include (C : sig
-               type ctx = C.ctx
-               type 'a io = 'a C.io
-               type 'a with_context = 'a C.with_context
-               type body = C.body
-               val map_context : 'a with_context -> ('a -> 'b) -> 'b with_context
-               val set_cache : Cohttp_lwt.S.call -> unit
-             end)
+    include (
+      C :
+        sig
+          type ctx = C.ctx
+
+          type 'a io = 'a C.io
+
+          type 'a with_context = 'a C.with_context
+
+          type body = C.body
+
+          val map_context : 'a with_context -> ('a -> 'b) -> 'b with_context
+
+          val set_cache : Cohttp_lwt.S.call -> unit
+        end)
 
     let attrs_for ~uri ~meth:_ () =
       [

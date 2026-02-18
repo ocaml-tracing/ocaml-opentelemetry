@@ -4,7 +4,8 @@
  (flags :standard -warn-error -a+8)
  (libraries
   opentelemetry.proto
-  opentelemetry.ambient-context
+  ambient-context.core
+  ambient-context
   ptime
   ptime.clock.os
   pbrt
