@@ -19,12 +19,26 @@
 module Otel := Opentelemetry
 module Otrace := Trace_core
 
-type Otrace.extension_event +=
-  | Ev_link_span of Otrace.span * Otrace.span
-        (** Link the two spans together. Both must be currently active spans. *)
-  | Ev_set_span_kind of Otrace.span * Otel.Span_kind.t
-  | Ev_record_exn of Otrace.span * exn * Printexc.raw_backtrace
-        (** Record exception and potentially turn span to an error *)
+module Extensions : sig
+  type span_info
+
+  val scope_of_span_info : span_info -> Otel.Scope.t
+
+  type Otrace.span += Span_otel of span_info
+
+  type Otrace.extension_event +=
+    | Ev_link_span of Otrace.span * Otrace.span
+          (** Link the two spans together. Both must be currently active spans.
+          *)
+    | Ev_record_exn of Otrace.span * exn * Printexc.raw_backtrace
+    | Ev_set_span_kind of Otrace.span * Otel.Span_kind.t
+          (** Record exception and potentially turn span to an error *)
+
+  type Otrace.metric +=
+    | Metric_hist of Opentelemetry_proto.Metrics.histogram_data_point
+    | Metric_sum_int of int
+    | Metric_sum_float of float
+end
 
 val on_internal_error : (string -> unit) ref
 (** Callback to print errors in the library itself (ie bugs) *)
