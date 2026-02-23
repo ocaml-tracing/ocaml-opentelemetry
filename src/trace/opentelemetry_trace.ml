@@ -6,19 +6,30 @@ module Well_known = struct end
 let on_internal_error =
   ref (fun msg -> Printf.eprintf "error in Opentelemetry_trace: %s\n%!" msg)
 
-type span_info = {
-  start_time: int64;
-  name: string;
-  scope: Otel.Scope.t;
-  parent: Otel.Span_ctx.t option;
-}
+module Extensions = struct
+  type span_info = {
+    start_time: int64;
+    name: string;
+    scope: Otel.Scope.t;
+    parent: Otel.Span_ctx.t option;
+  }
 
-type Trace.span += Span_otel of span_info
+  let scope_of_span_info s = s.scope
 
-type Trace.extension_event +=
-  | Ev_link_span of Trace.span * Trace.span
-  | Ev_set_span_kind of Trace.span * Otel.Span_kind.t
-  | Ev_record_exn of Trace.span * exn * Printexc.raw_backtrace
+  type Trace.span += Span_otel of span_info
+
+  type Trace.extension_event +=
+    | Ev_link_span of Trace.span * Trace.span
+    | Ev_record_exn of Trace.span * exn * Printexc.raw_backtrace
+    | Ev_set_span_kind of Trace.span * Otel.Span_kind.t
+
+  type Trace.metric +=
+    | Metric_hist of Opentelemetry_proto.Metrics.histogram_data_point
+    | Metric_sum_int of int
+    | Metric_sum_float of float
+end
+
+open Extensions
 
 module Internal = struct
   let enter_span' ?(parent_span : Trace.span option) ~__FUNCTION__ ~__FILE__
