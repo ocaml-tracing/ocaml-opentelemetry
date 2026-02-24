@@ -35,6 +35,7 @@ module Make
     sender_config:Sender.config ->
     n_workers:int ->
     ticker_task:float option ->
+    ?on_tick:(unit -> unit) ->
     unit ->
     Consumer.any_signal_l_builder
   (** Make a consumer builder, ie. a builder function that will take a bounded
@@ -46,6 +47,7 @@ end = struct
   type config = {
     n_workers: int;
     ticker_task: float option;
+    on_tick: unit -> unit;
   }
 
   type status =
@@ -174,14 +176,18 @@ end = struct
       | Stopped | Shutting_down -> IO.return ()
       | Active ->
         let* () = IO.sleep_s interval_s in
-        if Aswitch.is_on self.active then tick self;
+        if Aswitch.is_on self.active then (
+          tick self;
+          self.config.on_tick ()
+        );
         loop ()
     in
     IO.spawn loop
 
-  let create_state ~sender_config ~n_workers ~ticker_task ~q () : state =
+  let create_state ~sender_config ~n_workers ~ticker_task ~on_tick ~q () : state
+      =
     let active, active_trigger = Aswitch.create () in
-    let config = { n_workers; ticker_task } in
+    let config = { n_workers; ticker_task; on_tick } in
     let self =
       {
         active;
@@ -233,12 +239,14 @@ end = struct
     let self_metrics ~clock () = self_metrics self ~clock in
     { active = (fun () -> self.active); tick; shutdown; self_metrics }
 
-  let consumer ~sender_config ~n_workers ~ticker_task () :
+  let consumer ~sender_config ~n_workers ~ticker_task ?(on_tick = ignore) () :
       Consumer.any_signal_l_builder =
     {
       start_consuming =
         (fun q ->
-          let st = create_state ~sender_config ~n_workers ~ticker_task ~q () in
+          let st =
+            create_state ~sender_config ~n_workers ~ticker_task ~on_tick ~q ()
+          in
           to_consumer st);
     }
 end

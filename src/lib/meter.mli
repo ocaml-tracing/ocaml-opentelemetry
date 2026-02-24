@@ -8,7 +8,10 @@
     {!add_to_exporter} or {!add_to_main_exporter} once after creating your
     instruments. *)
 
-type t
+type t = {
+  emit: Metrics.t Opentelemetry_emitter.Emitter.t;
+  clock: Clock.t;
+}
 
 val dummy : t
 (** Dummy meter, always disabled *)
@@ -17,13 +20,6 @@ val enabled : t -> bool
 
 val of_exporter : Exporter.t -> t
 (** Create a meter from an exporter *)
-
-val create : exporter:Exporter.t -> ?name:string -> unit -> t
-[@@deprecated "use of_exporter"]
-
-val default : t
-(** Meter that forwards to the current main exporter. Equivalent to
-    [of_exporter Main_exporter.dynamic_forward_to_main_exporter]. *)
 
 val emit1 : t -> Metrics.t -> unit
 (** Emit a single metric directly, bypassing the instrument registry *)
@@ -36,17 +32,6 @@ val add_cb : (clock:Clock.t -> unit -> Metrics.t list) -> unit
 val collect : t -> Metrics.t list
 (** Collect metrics from all registered instruments ({!Instrument.all}) and raw
     callbacks ({!add_cb}), using this meter's clock. *)
-
-val add_to_exporter : ?min_interval:Mtime.span -> Exporter.t -> t -> unit
-(** Register a periodic tick callback on [exp] that collects and emits all
-    instruments. Call this once after creating your instruments.
-    @param min_interval minimum time between collections (default 4s, min 100ms)
-*)
-
-val add_to_main_exporter : ?min_interval:Mtime.span -> t -> unit
-(** Like {!add_to_exporter} but targets the main exporter via
-    {!Main_exporter.add_on_tick_callback}, so it works even if the main exporter
-    has not been set yet. *)
 
 module Instrument = Instrument
 (** Global registry of metric instruments. Re-exported from

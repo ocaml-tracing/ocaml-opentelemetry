@@ -70,7 +70,8 @@ module Consumer_impl =
     (Httpc)
 
 let create_consumer ?(config = Config.make ()) () =
-  Consumer_impl.consumer ~ticker_task:(Some 0.5) ~config ()
+  Consumer_impl.consumer ~ticker_task:(Some 0.5) ~on_tick:OTEL.Sdk.tick ~config
+    ()
 
 let create_exporter ?(config = Config.make ()) () =
   let consumer = create_consumer ~config () in
@@ -79,14 +80,16 @@ let create_exporter ?(config = Config.make ()) () =
       ~high_watermark:Bounded_queue.Defaults.high_watermark ()
   in
   Exporter_queued.create ~clock:Clock.ptime_clock ~q:bq ~consumer ()
-  |> Exporter_batch.add_batching ~config
 
 let create_backend = create_exporter
 
 let setup_ ~config () : Exporter.t =
   Opentelemetry_client_lwt.Util_ambient_context.setup_ambient_context ();
   let exp = create_exporter ~config () in
-  Main_exporter.set exp;
+  Sdk.set ?batch_traces:config.batch_traces ?batch_metrics:config.batch_metrics
+    ?batch_logs:config.batch_logs
+    ~batch_timeout:Mtime.Span.(config.batch_timeout_ms * ms)
+    exp;
   exp
 
 let setup ?(config = Config.make ()) ?(enable = true) () =
@@ -95,7 +98,7 @@ let setup ?(config = Config.make ()) ?(enable = true) () =
 
 let remove_exporter () : unit Lwt.t =
   let done_fut, done_u = Lwt.wait () in
-  Main_exporter.remove ~on_done:(fun () -> Lwt.wakeup_later done_u ()) ();
+  Sdk.remove ~on_done:(fun () -> Lwt.wakeup_later done_u ()) ();
   done_fut
 
 let remove_backend = remove_exporter

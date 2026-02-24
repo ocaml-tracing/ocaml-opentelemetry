@@ -34,23 +34,13 @@ let get_metrics () : Metrics.t list =
       [ int ~now gc.Gc.compactions ];
   ]
 
-let setup ?(min_interval_s = default_interval_s) (exp : Exporter.t) =
-  (* limit rate *)
+let setup ?(min_interval_s = default_interval_s)
+    ?(meter = Meter_provider.default_meter) () =
   let min_interval_s = max 5 min_interval_s in
   let min_interval = Mtime.Span.(min_interval_s * s) in
   let limiter = Interval_limiter.create ~min_interval () in
+  Sdk.add_on_tick_callback (fun () ->
+      if Interval_limiter.make_attempt limiter then
+        List.iter (Meter.emit1 meter) (get_metrics ()))
 
-  let on_tick () =
-    if Interval_limiter.make_attempt limiter then (
-      let m = get_metrics () in
-      Exporter.send_metrics exp m
-    )
-  in
-  Exporter.on_tick exp on_tick
-
-let setup_on_main_exporter ?min_interval_s () =
-  match Main_exporter.get () with
-  | None -> ()
-  | Some exp -> setup ?min_interval_s exp
-
-let basic_setup () = setup_on_main_exporter ()
+let basic_setup () = setup ()

@@ -2,13 +2,9 @@ open Common_
 
 (** Shutdown this exporter and block the thread until it's done.
 
-    {b NOTE}: this might deadlock if the exporter runs entirely in the current
-    thread! *)
-let shutdown (exp : OTEL.Exporter.t) : unit =
-  let q = Sync_queue.create () in
-  OTEL.Exporter.on_stop exp (Sync_queue.push q);
-  OTEL.Exporter.shutdown exp;
-  Sync_queue.pop q
+    With the new Exporter.t interface, shutdown is synchronous. This function is
+    kept for backwards compatibility. *)
+let shutdown (exp : OTEL.Exporter.t) : unit = OTEL.Exporter.shutdown exp
 
 (** Shutdown main exporter and wait *)
-let shutdown_main () : unit = Option.iter shutdown (OTEL.Main_exporter.get ())
+let shutdown_main () : unit = Option.iter shutdown (OTEL.Sdk.get ())

@@ -24,7 +24,7 @@ let num_tr = Atomic.make 0
 
 let run_job job_id : unit Lwt.t =
   let i = ref 0 in
-  while%lwt T.Aswitch.is_on (T.Main_exporter.active ()) && !i < !n do
+  while%lwt T.Aswitch.is_on (T.Sdk.active ()) && !i < !n do
     (* Printf.eprintf "test: run outer loop job_id=%d i=%d\n%!" job_id !i; *)
     let@ scope =
       Atomic.incr num_tr;
@@ -82,7 +82,7 @@ let run_job job_id : unit Lwt.t =
   Lwt.return ()*)
 
 let run () : unit Lwt.t =
-  T.Gc_metrics.setup_on_main_exporter ();
+  T.Gc_metrics.setup ();
 
   T.Meter.add_cb (fun ~clock () ->
       let now = T.Clock.now clock in

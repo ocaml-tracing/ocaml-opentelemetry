@@ -74,6 +74,37 @@ let histogram ~name ?description ?unit_ ?aggregation_temporality
   in
   make_metric ~name ?description ?unit_ ~data ()
 
+let add_attrs (m : t) (attrs : Key_value.t list) : unit =
+  let attrs = List.map Key_value.conv attrs in
+  match m.data with
+  | None -> ()
+  | Some (Gauge g) ->
+    List.iter
+      (fun (dp : number_data_point) ->
+        number_data_point_set_attributes dp (attrs @ dp.attributes))
+      g.data_points
+  | Some (Sum s) ->
+    List.iter
+      (fun (dp : number_data_point) ->
+        number_data_point_set_attributes dp (attrs @ dp.attributes))
+      s.data_points
+  | Some (Histogram h) ->
+    List.iter
+      (fun (dp : histogram_data_point) ->
+        histogram_data_point_set_attributes dp (attrs @ dp.attributes))
+      h.data_points
+  | Some (Exponential_histogram eh) ->
+    List.iter
+      (fun (dp : exponential_histogram_data_point) ->
+        exponential_histogram_data_point_set_attributes dp
+          (attrs @ dp.attributes))
+      eh.data_points
+  | Some (Summary s) ->
+    List.iter
+      (fun (dp : summary_data_point) ->
+        summary_data_point_set_attributes dp (attrs @ dp.attributes))
+      s.data_points
+
 (* TODO: exponential history *)
 (* TODO: summary *)
 (* TODO: exemplar *)

@@ -1,5 +1,3 @@
-open Common_
-
 (** start a thread in the background, running [f()], blocking signals *)
 let start_bg_thread (f : unit -> unit) : Thread.t =
   let unix_run () =
@@ -26,7 +24,7 @@ let start_bg_thread (f : unit -> unit) : Thread.t =
   Thread.create run ()
 
 (** thread that calls [tick()] regularly, to help enforce timeouts *)
-let setup_ticker_thread ~(active : Aswitch.t) ~sleep_ms (exp : OTEL.Exporter.t)
+let setup_ticker_thread ~(active : Aswitch.t) ~sleep_ms ~(tick : unit -> unit)
     () =
   let sleep_s = float sleep_ms /. 1000. in
   let tick_loop () =
@@ -34,10 +32,7 @@ let setup_ticker_thread ~(active : Aswitch.t) ~sleep_ms (exp : OTEL.Exporter.t)
       while Aswitch.is_on active do
         Thread.delay sleep_s;
 
-        if Aswitch.is_on active then (
-          let mtime = Mtime_clock.now () in
-          OTEL.Exporter.tick exp ~mtime
-        )
+        if Aswitch.is_on active then tick ()
       done
     with
     | Sync_queue.Closed -> ()

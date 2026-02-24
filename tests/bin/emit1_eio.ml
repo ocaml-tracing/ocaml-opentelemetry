@@ -21,7 +21,7 @@ let n = ref max_int
 
 let run_job clock _job_id iterations : unit =
   let i = ref 0 in
-  while OT.Aswitch.is_on (OT.Main_exporter.active ()) && !i < !n do
+  while OT.Aswitch.is_on (OT.Sdk.active ()) && !i < !n do
     let@ scope =
       Atomic.incr num_tr;
       OT.Tracer.with_ ~kind:OT.Span.Span_kind_producer "loop.outer"
@@ -69,7 +69,7 @@ let run_job clock _job_id iterations : unit =
   done
 
 let run env proc iterations () : unit =
-  OT.Gc_metrics.setup_on_main_exporter ();
+  OT.Gc_metrics.setup ();
 
   OT.Meter.add_cb (fun ~clock () ->
       let now = OT.Clock.now clock in
@@ -78,7 +78,8 @@ let run env proc iterations () : unit =
           sum ~name:"num-sleep" ~is_monotonic:true
             [ int ~now (Atomic.get num_sleep) ];
         ]);
-  OT.Meter.add_to_main_exporter ~min_interval:Mtime.Span.(10 * ms)
+  OT.Meter.add_to_main_exporter
+    ~min_interval:Mtime.Span.(10 * ms)
     OT.Meter.default;
 
   let n_jobs = max 1 !n_jobs in

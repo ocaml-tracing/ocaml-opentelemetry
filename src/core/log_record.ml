@@ -77,3 +77,7 @@ let make_strf ?time ?severity ?log_level ?flags ?trace_id ?span_id ?attrs
       make_str ?time ~observed_time_unix_nano ?severity ?log_level ?flags
         ?trace_id ?span_id ?attrs bod)
     fmt
+
+let add_attrs (self : t) (attrs : Key_value.t list) : unit =
+  let attrs = List.map Key_value.conv attrs in
+  Proto.Logs.log_record_set_attributes self (attrs @ self.attributes)

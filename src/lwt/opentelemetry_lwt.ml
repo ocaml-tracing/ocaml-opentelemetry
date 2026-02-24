@@ -4,8 +4,8 @@ include Opentelemetry
 let setup_ambient_context () =
   Opentelemetry_ambient_context.set_current_storage Ambient_context_lwt.storage
 
-module Main_exporter = struct
-  include Main_exporter
+module Sdk = struct
+  include Sdk
 
   let remove () : unit Lwt.t =
     let p, resolve = Lwt.wait () in

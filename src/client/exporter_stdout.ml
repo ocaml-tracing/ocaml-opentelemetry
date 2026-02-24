@@ -1,7 +1,6 @@
 (** A simple exporter that prints on stdout. *)
 
 open Common_
-open Opentelemetry_emitter
 
 open struct
   let pp_span out (sp : OTEL.Span.t) =
@@ -40,58 +39,25 @@ end
 
 let stdout ?(clock = OTEL.Clock.ptime_clock) () : OTEL.Exporter.t =
   let open Opentelemetry_util in
+  ignore clock;
   let out = Format.std_formatter in
   let mutex = Mutex.create () in
-  let ticker = Cb_set.create () in
 
-  let active, trigger = Aswitch.create () in
-  let tick () = Cb_set.trigger ticker in
-
-  let mk_emitter ~signal_name pp_signal =
-    let emit l =
-      if Aswitch.is_off active then raise Emitter.Closed;
-      pp_vlist mutex pp_signal out l
-    in
-    let enabled () = Aswitch.is_on active in
-    let self_metrics ~now:_ () = [] in
-    let tick ~mtime:_ = () in
-    let flush_and_close () =
-      if Aswitch.is_on active then
-        let@ () = Util_mutex.protect mutex in
-        Format.pp_print_flush out ()
-    in
-    let closed () = Aswitch.is_off active in
-    {
-      Emitter.emit;
-      signal_name;
-      self_metrics;
-      closed;
-      enabled;
-      tick;
-      flush_and_close;
-    }
+  let export (sig_ : OTEL.Any_signal_l.t) =
+    match sig_ with
+    | OTEL.Any_signal_l.Spans sp -> pp_vlist mutex pp_span out sp
+    | OTEL.Any_signal_l.Logs logs -> pp_vlist mutex pp_log out logs
+    | OTEL.Any_signal_l.Metrics ms -> pp_vlist mutex pp_metric out ms
   in
 
-  let emit_spans = mk_emitter ~signal_name:"spans" pp_span in
-  let emit_logs = mk_emitter ~signal_name:"logs" pp_log in
-  let emit_metrics = mk_emitter ~signal_name:"metrics" pp_metric in
-
-  let self_metrics () = [] in
   let shutdown () =
-    Emitter.flush_and_close emit_spans;
-    Emitter.flush_and_close emit_logs;
-    Emitter.flush_and_close emit_metrics;
-    Aswitch.turn_off trigger
+    let@ () = Util_mutex.protect mutex in
+    Format.pp_print_flush out ()
   in
 
   {
-    active = (fun () -> active);
-    clock;
-    emit_spans;
-    emit_logs;
-    emit_metrics;
-    on_tick = Cb_set.register ticker;
-    self_metrics;
-    tick;
+    OTEL.Exporter.export;
+    active = (fun () -> Aswitch.dummy);
     shutdown;
+    self_metrics = (fun () -> []);
   }

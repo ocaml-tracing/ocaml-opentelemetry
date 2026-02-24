@@ -68,15 +68,8 @@ end = struct
       | `Closed ->
         shutdown_worker self;
         IO.return ()
-      | `Item (Logs logs) ->
-        OTEL.Exporter.send_logs self.exp logs;
-        loop ()
-      | `Item (Metrics ms) ->
-        OTEL.Exporter.send_metrics self.exp ms;
-
-        loop ()
-      | `Item (Spans sp) ->
-        OTEL.Exporter.send_trace self.exp sp;
+      | `Item sig_ ->
+        self.exp.OTEL.Exporter.export sig_;
         loop ()
       | `Empty ->
         (match Atomic.get self.status with
@@ -109,12 +102,6 @@ end = struct
         notify = Notifier.create ();
       }
     in
-
-    (* if [exporter] turns off, shut us down too. Note that [shutdown]
-       is idempotent so it won't lead to divergence when it shuts the
-       exporter down. *)
-    Aswitch.on_turn_off (OTEL.Exporter.active exporter) (fun () ->
-        shutdown self);
 
     start_worker self;
     self

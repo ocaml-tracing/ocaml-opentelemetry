@@ -98,3 +98,32 @@ let mk_attributes ?(service_name = !service_name) ?(attrs = []) () : _ list =
       :: l
   in
   l |> merge_global_attributes_
+
+(** Global tick callback registry. Callbacks are run periodically by the SDK
+    ticker. Other modules register here to avoid depending on {!Sdk}. *)
+let tick_cbs_ : (unit -> unit) Alist.t = Alist.make ()
+
+let add_on_tick_callback (f : unit -> unit) : unit = Alist.add tick_cbs_ f
+
+let run_tick_callbacks () : unit =
+  List.iter (fun f -> f ()) (Alist.get tick_cbs_)
+
+(* TODO: rename to dynamic_attributes *)
+module Enricher = struct
+  type t = unit -> key_value list
+
+  let cached ~(timeout_s : float) (e : t) : t =
+    let last_updated = ref (Unix.gettimeofday ()) in
+    let value = ref (e ()) in
+    fun () ->
+      let now = Unix.gettimeofday () in
+      if now > !last_updated +. timeout_s then (
+        last_updated := now;
+        value := e ()
+      );
+      !value
+
+  let all_ : t list ref = ref []
+
+  let add f = all_ := f :: !all_
+end

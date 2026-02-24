@@ -22,7 +22,7 @@ let stress_alloc_ = ref true
 let num_tr = Atomic.make 0
 
 let run_job () =
-  let active = OT.Main_exporter.active () in
+  let active = OT.Sdk.active () in
   let i = ref 0 in
   let cnt = ref 0 in
 
@@ -85,7 +85,7 @@ let run_job () =
   ()
 
 let run () =
-  OT.Gc_metrics.setup_on_main_exporter ();
+  OT.Gc_metrics.setup ();
 
   OT.Meter.add_cb (fun ~clock () ->
       let now = OT.Clock.now clock in
@@ -163,7 +163,7 @@ let () =
           ~high_watermark:20_000 ()
       in
       let exp =
-        OTC.Exporter_queued.create ~clock:exp.clock ~q
+        OTC.Exporter_queued.create ~clock:OT.Clock.ptime_clock ~q
           ~consumer:(Consumer_exporter.consumer exp)
           ()
       in
@@ -173,7 +173,7 @@ let () =
       exp, ignore
   in
 
-  OT.Main_exporter.set exporter;
+  OT.Sdk.set exporter;
   let@ () = Fun.protect ~finally in
 
   if !self_trace then Opentelemetry_client.Self_trace.set_enabled true;

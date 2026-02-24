@@ -163,7 +163,7 @@ let create_consumer ?(config = Config.make ()) ~sw ~env () :
     let env = env
   end) in
   let module C = Generic_http_consumer.Make (M.IO) (M.Notifier) (M.Httpc) in
-  C.consumer ~ticker_task:(Some 0.5) ~config ()
+  C.consumer ~ticker_task:(Some 0.5) ~on_tick:Sdk.tick ~config ()
 
 let create_exporter ?(config = Config.make ()) ~sw ~env () =
   let consumer = create_consumer ~config ~sw ~env () in
@@ -172,21 +172,23 @@ let create_exporter ?(config = Config.make ()) ~sw ~env () =
       ~high_watermark:Bounded_queue.Defaults.high_watermark ()
   in
   Exporter_queued.create ~clock:Clock.ptime_clock ~q:bq ~consumer ()
-  |> Exporter_batch.add_batching ~config
 
 let create_backend = create_exporter
 
 let setup_ ~sw ~config env : unit =
   Opentelemetry_ambient_context.set_current_storage Ambient_context_eio.storage;
   let exp = create_exporter ~config ~sw ~env () in
-  Main_exporter.set exp
+  Sdk.set ?batch_traces:config.batch_traces ?batch_metrics:config.batch_metrics
+    ?batch_logs:config.batch_logs
+    ~batch_timeout:Mtime.Span.(config.batch_timeout_ms * ms)
+    exp
 
 let setup ?(config = Config.make ()) ?(enable = true) ~sw env =
   if enable && not config.sdk_disabled then setup_ ~sw ~config env
 
 let remove_exporter () =
   let p, waker = Eio.Promise.create () in
-  Main_exporter.remove () ~on_done:(fun () -> Eio.Promise.resolve waker ());
+  Sdk.remove () ~on_done:(fun () -> Eio.Promise.resolve waker ());
   Eio.Promise.await p
 
 let remove_backend = remove_exporter

@@ -34,11 +34,6 @@ module Main = struct
 
   (** Set the current clock *)
   let set t : unit = Util_atomic.update_cas main (fun _ -> (), t)
-
-  (** Clock that always defers to the current main clock. Whenever
-      [now dynamic_main] is called, it in turn becomes [now (get ())], ie it
-      looks up the current clock and uses it. *)
-  let dynamic_main : t = { now = (fun () -> now (get ())) }
 end
 
 (** Timestamp using the main clock *)

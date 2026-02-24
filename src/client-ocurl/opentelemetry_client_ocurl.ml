@@ -73,8 +73,8 @@ let consumer ?(config = Config.make ()) () :
     else
       None
   in
-  Consumer_impl.consumer ~override_n_workers:n_workers ~ticker_task
-    ~config:config.common ()
+  Consumer_impl.consumer ~override_n_workers:n_workers ~on_tick:OTEL.Sdk.tick
+    ~ticker_task ~config:config.common ()
 
 let create_exporter ?(config = Config.make ()) () : OTEL.Exporter.t =
   let consumer = consumer ~config () in
@@ -84,43 +84,25 @@ let create_exporter ?(config = Config.make ()) () : OTEL.Exporter.t =
   in
 
   OTELC.Exporter_queued.create ~clock:OTEL.Clock.ptime_clock ~q:bq ~consumer ()
-  |> OTELC.Exporter_batch.add_batching ~config:config.common
 
 let create_backend = create_exporter
 
-let shutdown_and_wait ?(after_shutdown = ignore) (self : OTEL.Exporter.t) : unit
-    =
-  let open Opentelemetry_client_sync in
-  let sq = Sync_queue.create () in
-  OTEL.Aswitch.on_turn_off (OTEL.Exporter.active self) (fun () ->
-      Sync_queue.push sq ());
-  OTEL.Exporter.shutdown self;
-  Sync_queue.pop sq;
-  after_shutdown self;
-  ()
-
 let setup_ ~config () : OTEL.Exporter.t =
   let exporter = create_exporter ~config () in
-  OTEL.Main_exporter.set exporter;
+  OTEL.Sdk.set ?batch_traces:config.common.batch_traces
+    ?batch_metrics:config.common.batch_metrics
+    ?batch_logs:config.common.batch_logs
+    ~batch_timeout:Mtime.Span.(config.common.batch_timeout_ms * ms)
+    exporter;
 
   OTELC.Self_trace.set_enabled config.common.self_trace;
-
-  if config.ticker_thread then (
-    (* at most a minute *)
-    let sleep_ms = min 60_000 (max 2 config.ticker_interval_ms) in
-    let active = OTEL.Exporter.active exporter in
-    ignore
-      (Opentelemetry_client_sync.Util_thread.setup_ticker_thread ~active
-         ~sleep_ms exporter ()
-        : Thread.t)
-  );
   exporter
 
 let remove_exporter () : unit =
   let open Opentelemetry_client_sync in
   (* used to wait *)
   let sq = Sync_queue.create () in
-  OTEL.Main_exporter.remove () ~on_done:(fun () -> Sync_queue.push sq ());
+  OTEL.Sdk.remove () ~on_done:(fun () -> Sync_queue.push sq ());
   Sync_queue.pop sq
 
 let remove_backend = remove_exporter
@@ -129,10 +111,12 @@ let setup ?(config : Config.t = Config.make ()) ?(enable = true) () =
   if enable && not config.common.sdk_disabled then
     ignore (setup_ ~config () : OTEL.Exporter.t)
 
-let with_setup ?after_shutdown ?(config : Config.t = Config.make ())
+let with_setup ?(after_shutdown = ignore) ?(config : Config.t = Config.make ())
     ?(enable = true) () f =
   if enable && not config.common.sdk_disabled then (
     let exp = setup_ ~config () in
-    Fun.protect f ~finally:(fun () -> shutdown_and_wait ?after_shutdown exp)
+    Fun.protect f ~finally:(fun () ->
+        remove_exporter ();
+        after_shutdown exp)
   ) else
     f ()

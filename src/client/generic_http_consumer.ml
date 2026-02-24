@@ -29,6 +29,7 @@ module Make
   val consumer :
     ?override_n_workers:int ->
     ticker_task:float option ->
+    ?on_tick:(unit -> unit) ->
     config:Http_config.t ->
     unit ->
     Consumer.any_signal_l_builder
@@ -127,8 +128,8 @@ end = struct
 
   let default_n_workers = 50
 
-  let consumer ?override_n_workers ~ticker_task ~(config : Http_config.t) () :
-      Consumer.any_signal_l_builder =
+  let consumer ?override_n_workers ~ticker_task ?(on_tick = ignore)
+      ~(config : Http_config.t) () : Consumer.any_signal_l_builder =
     let n_workers =
       max 2
         (min 500
@@ -138,5 +139,5 @@ end = struct
            | None, None -> default_n_workers))
     in
 
-    C.consumer ~sender_config:config ~n_workers ~ticker_task ()
+    C.consumer ~sender_config:config ~n_workers ~ticker_task ~on_tick ()
 end

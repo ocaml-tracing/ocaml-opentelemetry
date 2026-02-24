@@ -4,17 +4,28 @@ module Otel = Opentelemetry
 let spans_emitted : Otel.Span.t list ref = ref []
 
 let test_exporter : Otel.Exporter.t =
-  let open Otel.Exporter in
   {
-    (dummy ()) with
-    emit_spans =
-      Opentelemetry_emitter.To_list.to_list ~signal_name:"spans" spans_emitted;
+    Otel.Exporter.export =
+      (fun sig_ ->
+        match sig_ with
+        | Otel.Any_signal_l.Spans sp ->
+          spans_emitted := List.rev_append sp !spans_emitted
+        | _ -> ());
+    active = (fun () -> Opentelemetry_util.Aswitch.dummy);
+    shutdown = ignore;
+    self_metrics = (fun () -> []);
   }
 
 let with_test_exporter f =
   (* uncomment for eprintf debugging: *)
   (* let test_exporter = Opentelemetry_client.Exporter_debug.debug test_exporter in*)
-  Otel.Main_exporter.with_setup_debug_backend test_exporter () f
+  Otel.Sdk.set test_exporter;
+  Fun.protect f ~finally:(fun () ->
+      let sq = Opentelemetry_client_sync.Sync_queue.create () in
+      Otel.Sdk.remove
+        ~on_done:(fun () -> Opentelemetry_client_sync.Sync_queue.push sq ())
+        ();
+      Opentelemetry_client_sync.Sync_queue.pop sq)
 
 let bytes_to_hex = Opentelemetry_util.Util_bytes_.bytes_to_hex
 

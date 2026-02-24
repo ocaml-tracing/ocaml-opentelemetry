@@ -39,27 +39,37 @@ module Exporter = struct
   let get_logger (self : t) : Logger.t = Logger.of_exporter self
 end
 
-module Main_exporter = struct
-  include Main_exporter
+module Sdk = struct
+  include Sdk
 
   (** Get a tracer forwarding to the current main exporter.
       @since NEXT_RELEASE *)
-  let get_tracer () : Tracer.t = Tracer.default
+  let get_tracer ?name ?version ?attrs ?__MODULE__ () =
+    Trace_provider.get_tracer ?name ?version ?attrs ?__MODULE__ ()
 
   (** Get a meter forwarding to the current main exporter.
       @since NEXT_RELEASE *)
-  let get_meter () : Meter.t = Meter.default
+  let get_meter ?name ?version ?attrs ?__MODULE__ () =
+    Meter_provider.get_meter ?name ?version ?attrs ?__MODULE__ ()
 
   (** Get a logger forwarding to the current main exporter.
       @since NEXT_RELEASE *)
-  let get_logger () : Logger.t = Logger.default
+  let get_logger ?name ?version ?attrs ?__MODULE__ () =
+    Log_provider.get_logger ?name ?version ?attrs ?__MODULE__ ()
 end
+
+module Main_exporter = Sdk [@@deprecated "use Sdk instead"]
 
 module Collector = struct
   include Exporter
-  include Main_exporter
+  include Sdk
 end
 [@@deprecated "Use 'Exporter' instead"]
+
+module Dynamic_enricher = Dynamic_enricher
+module Trace_provider = Trace_provider
+module Meter_provider = Meter_provider
+module Log_provider = Log_provider
 
 (** {2 Identifiers} *)
 
@@ -98,19 +108,48 @@ module Span_kind = Span_kind
 
 module Span = Span
 module Ambient_span = Ambient_span
-module Tracer = Tracer
+
+module Tracer = struct
+  include Tracer
+
+  let default = Trace_provider.default_tracer
+
+  let with_thunk_and_finally = Trace_provider.with_thunk_and_finally
+
+  let with_ = Trace_provider.with_
+end
+
 module Trace = Tracer [@@deprecated "use Tracer instead"]
 
 (** {2 Metrics} *)
 
 module Metrics = Metrics
 module Instrument = Instrument
-module Meter = Meter
+
+module Meter = struct
+  include Meter
+
+  let default = Meter_provider.default_meter
+
+  let add_to_exporter = Meter_provider.add_to_exporter
+
+  let add_to_main_exporter = Meter_provider.add_to_main_exporter
+end
 
 (** {2 Logs} *)
 
 module Log_record = Log_record
-module Logger = Logger
+
+module Logger = struct
+  include Logger
+
+  let default = Log_provider.default_logger
+
+  let log = Log_provider.log
+
+  let logf = Log_provider.logf
+end
+
 module Logs = Logger [@@deprecated "use Logger"]
 
 (** {2 Utils} *)

@@ -22,7 +22,7 @@ let stress_alloc_ = ref true
 let num_tr = Atomic.make 0
 
 let run_job () =
-  let active = OT.Main_exporter.active () in
+  let active = OT.Sdk.active () in
   let i = ref 0 in
   let cnt = ref 0 in
 
@@ -88,9 +88,9 @@ let run_job () =
   ()
 
 let run () =
-  OT.Gc_metrics.setup_on_main_exporter ();
+  OT.Gc_metrics.setup ();
 
-  OT.Meter.add_cb (fun ~clock:_ () -> OT.Main_exporter.self_metrics ());
+  OT.Meter.add_cb (fun ~clock:_ () -> OT.Sdk.self_metrics ());
   OT.Meter.add_cb (fun ~clock () ->
       let now = OT.Clock.now clock in
       OT.Metrics.

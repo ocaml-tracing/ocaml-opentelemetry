@@ -28,7 +28,7 @@ open struct
   }
 
   let create_state ~(exporter : OTEL.Exporter.t) () : state =
-    let clock = exporter.clock in
+    let clock = OTEL.Clock.ptime_clock in
     { clock; exporter }
 
   (* sanity check: otrace meta-map must be the same as hmap *)
@@ -100,7 +100,7 @@ open struct
       (* emit the span after setting the end timestamp *)
       let end_time = OTEL.Clock.now self.clock in
       OTEL.Proto.Trace.span_set_end_time_unix_nano span end_time;
-      OTEL.Exporter.send_trace self.exporter [ span ]
+      self.exporter.OTEL.Exporter.export (OTEL.Any_signal_l.Spans [ span ])
     | _ -> ()
 
   let add_data_to_span _self span (data : (_ * Otrace.user_data) list) =
@@ -136,7 +136,7 @@ open struct
       OTEL.Log_record.make ~severity ?trace_id ?span_id ~attrs:data
         ~observed_time_unix_nano (`String msg)
     in
-    OTEL.Exporter.send_logs self.exporter [ log ]
+    self.exporter.OTEL.Exporter.export (OTEL.Any_signal_l.Logs [ log ])
 
   let metric (self : state) ~level:_ ~params:_ ~data:attrs name v : unit =
     let now = OTEL.Clock.now self.clock in
@@ -158,7 +158,8 @@ open struct
       | `sum v -> [ OTEL.Metrics.sum ~name [ v ] ]
       | `hist h -> [ OTEL.Metrics.histogram ~name [ h ] ]
     in
-    if m <> [] then OTEL.Exporter.send_metrics self.exporter m
+    if m <> [] then
+      self.exporter.OTEL.Exporter.export (OTEL.Any_signal_l.Metrics m)
 
   let extension (_self : state) ~level:_ ev =
     match ev with
@@ -218,7 +219,21 @@ let record_exception sp exn bt : unit =
 
 (** Collector that forwards to the {b currently installed} OTEL exporter. *)
 let collector_main_otel_exporter () : Otrace.collector =
-  collector_of_exporter OTEL.Main_exporter.dynamic_forward_to_main_exporter
+  (* Create a dynamic exporter that forwards to the currently installed main
+     exporter at call time. *)
+  let dynamic_exp : OTEL.Exporter.t =
+    {
+      OTEL.Exporter.export =
+        (fun sig_ ->
+          match OTEL.Sdk.get () with
+          | None -> ()
+          | Some exp -> exp.OTEL.Exporter.export sig_);
+      active = (fun () -> Aswitch.dummy);
+      shutdown = ignore;
+      self_metrics = (fun () -> OTEL.Sdk.self_metrics ());
+    }
+  in
+  collector_of_exporter dynamic_exp
 
 let (collector
      [@deprecated "use collector_of_exporter or collector_main_otel_exporter"])
@@ -229,7 +244,7 @@ let setup () = Otrace.setup_collector @@ collector_main_otel_exporter ()
 
 let setup_with_otel_exporter exp : unit =
   let coll = collector_of_exporter exp in
-  OTEL.Main_exporter.set exp;
+  OTEL.Sdk.set exp;
   Otrace.setup_collector coll
 
 let setup_with_otel_backend = setup_with_otel_exporter
