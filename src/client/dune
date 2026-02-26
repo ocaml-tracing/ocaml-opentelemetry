@@ -2,4 +2,5 @@
  (name opentelemetry_client)
  (public_name opentelemetry.client)
  (libraries opentelemetry pbrt mtime mtime.clock.os)
+ (flags :standard -open Opentelemetry_atomic)
  (synopsis "Common types and logic shared between client implementations"))
