@@ -53,7 +53,7 @@
  (depopts atomic trace thread-local-storage lwt eio picos)
  (conflicts
   (trace
-   (< 0.11)))
+   (< 0.12)))
  (tags
   (instrumentation tracing opentelemetry datadog jaeger)))
 
