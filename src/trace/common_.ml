@@ -1,6 +1,6 @@
 module OTEL = Opentelemetry
-module Otrace = Trace_core (* ocaml-trace *)
-module Ambient_context = Opentelemetry_ambient_context
+module Trace = Trace_core (* ocaml-trace *)
+module Ambient_context = Ambient_context
 
 let ( let@ ) = ( @@ )
 
