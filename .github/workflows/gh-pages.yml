@@ -21,7 +21,7 @@ jobs:
           allow-prerelease-opam: true
           #
       # TODO: remove when it's on opam
-      - run: opam pin ambient-context https://github.com/ocaml-tracing/ocaml-ambient-context.git -y -n
+      - run: opam pin ambient-context https://github.com/ocaml-tracing/ambient-context.git -y -n
 
       - name: Deps
         run: opam install odig opentelemetry opentelemetry-lwt opentelemetry-client-ocurl opentelemetry-cohttp-lwt
