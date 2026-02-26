@@ -39,8 +39,7 @@ open struct
     OTEL.Span_ctx.k_ambient
 
   let enter_span (self : state) ~__FUNCTION__ ~__FILE__ ~__LINE__ ~level:_
-      ~params:_ ~(data : (_ * Trace.user_data) list) ~parent name : Trace.span
-      =
+      ~params:_ ~(data : (_ * Trace.user_data) list) ~parent name : Trace.span =
     let start_time = OTEL.Clock.now self.clock in
     let trace_id, parent_id =
       match parent with
