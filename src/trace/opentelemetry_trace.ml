@@ -14,7 +14,13 @@ module Extensions = struct
     parent: Otel.Span_ctx.t option;
   }
 
-  let scope_of_span_info s = s.scope
+  let k_span_info : span_info Hmap.key = Hmap.Key.create ()
+
+  let[@inline] scope_of_span_info s = s.scope
+
+  let[@inline] span_info_of_scope_exn (scope : Otel.Scope.t) : span_info =
+    try Hmap.get k_span_info scope.hmap
+    with Invalid_argument _ -> assert false
 
   type Trace.span += Span_otel of span_info
 
@@ -31,7 +37,7 @@ end
 
 open Extensions
 
-module Internal = struct
+module Collector_ = struct
   let enter_span' ?(parent_span : Trace.span option) ~__FUNCTION__ ~__FILE__
       ~__LINE__ ~data name : span_info =
     let open Otel in
@@ -78,7 +84,9 @@ module Internal = struct
         :: ("code.lineno", `Int __LINE__)
         :: attrs_function);
 
-    { start_time; name; scope = new_scope; parent }
+    let span_info = { start_time; name; scope = new_scope; parent } in
+    Otel.Scope.hmap_set k_span_info span_info new_scope;
+    span_info
 
   let exit_span_ ({ name; start_time; scope; parent } : span_info) : Otel.Span.t
       =
@@ -158,6 +166,25 @@ module Internal = struct
       ~message ~metric ~extension ()
 end
 
+module Ambient_span_provider_ = struct
+  let get_current_span () =
+    match Otel.Scope.get_ambient_scope () with
+    | None -> None
+    | Some scope -> Some (Span_otel (span_info_of_scope_exn scope))
+
+  let with_current_span_set_to () span f =
+    match span with
+    | Span_otel span_info ->
+      Otel.Scope.with_ambient_scope (scope_of_span_info span_info) (fun () ->
+          f span)
+    | _ -> f span
+
+  let callbacks : unit Trace.Ambient_span_provider.Callbacks.t =
+    { get_current_span; with_current_span_set_to }
+
+  let provider = Trace.Ambient_span_provider.ASP_some ((), callbacks)
+end
+
 let link_spans (sp1 : Trace.span) (sp2 : Trace.span) : unit =
   if Trace.enabled () then Trace.extension_event @@ Ev_link_span (sp1, sp2)
 
@@ -172,10 +199,14 @@ let with_ambient_span (sp : Trace.span) f =
   | Span_otel sb -> Otel.Scope.with_ambient_scope sb.scope f
   | _ -> f ()
 
-let collector () : Trace.collector =
-  Trace_core.Collector.C_some ((), Internal.callbacks)
+let ambient_span_provider = Ambient_span_provider_.provider
 
-let setup () = Trace.setup_collector @@ collector ()
+let collector () : Trace.collector =
+  Trace_core.Collector.C_some ((), Collector_.callbacks)
+
+let setup () =
+  Trace.set_ambient_context_provider Ambient_span_provider_.provider;
+  Trace.setup_collector @@ collector ()
 
 let setup_with_otel_backend b : unit =
   Otel.Collector.set_backend b;
