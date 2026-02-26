@@ -894,10 +894,11 @@ end
 module Scope : sig
   type item_list
 
-  type t = {
+  type t = private {
     trace_id: Trace_id.t;
     span_id: Span_id.t;
     mutable items: item_list;
+    mutable hmap: Hmap.t;  (** additional data, @since NEXT_RELEASE *)
   }
 
   val attrs : t -> key_value list
@@ -975,6 +976,10 @@ module Scope : sig
 
       @see <https://github.com/ELLIOTTCABLE/ocaml-ambient-context>
         ambient-context docs *)
+
+  val hmap_set : 'a Hmap.key -> 'a -> t -> unit
+  (** Modify the hmap.
+      @since NEXT_RELEASE *)
 end = struct
   type item_list =
     | Nil
@@ -988,6 +993,7 @@ end = struct
     trace_id: Trace_id.t;
     span_id: Span_id.t;
     mutable items: item_list;
+    mutable hmap: Hmap.t;
   }
 
   let attrs scope =
@@ -1049,7 +1055,8 @@ end = struct
       in
       List.fold_left (fun acc link -> Span_link (link, acc)) items links
     in
-    { trace_id; span_id; items }
+    let hmap = Hmap.empty in
+    { trace_id; span_id; items; hmap }
 
   let[@inline] to_span_link ?trace_state ?attrs ?dropped_attributes_count
       (self : t) : Span_link.t =
@@ -1107,6 +1114,8 @@ end = struct
 
   let[@inline] with_ambient_scope (sc : t) (f : unit -> 'a) : 'a =
     Ambient_context.with_key_bound_to ambient_scope_key sc f
+
+  let[@inline] hmap_set k v self = self.hmap <- Hmap.add k v self.hmap
 end
 
 (** {2 Traces} *)
@@ -1233,10 +1242,11 @@ module Trace = struct
     let rs = make_resource_spans ?service_name ?attrs spans in
     Collector.send_trace [ rs ] ~ret:(fun () -> ())
 
-  type scope = Scope.t = {
+  type scope = Scope.t = private {
     trace_id: Trace_id.t;
     span_id: Span_id.t;
     mutable items: Scope.item_list;
+    mutable hmap: Hmap.t;
   }
   [@@deprecated "use Scope.t"]
 
