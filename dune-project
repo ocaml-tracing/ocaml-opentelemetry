@@ -52,7 +52,7 @@
  (depopts trace lwt eio)
  (conflicts
   (trace
-   (< 0.11)))
+   (< 0.12)))
  (tags
   (instrumentation tracing opentelemetry datadog jaeger)))
 

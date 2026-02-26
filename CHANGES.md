@@ -1,7 +1,7 @@
 
 ## 0.13
 
-- feat: adapt to trace 0.11 (callbacks-based collector API, extensible span type, no more manual spans)
+- feat: adapt to trace 0.12 (callbacks-based collector API, extensible span type, no more manual spans, ambient-span-provider)
 - breaking: remove vendored `opentelemetry.ambient-context`; use the
     `ambient-context` 0.2 package directly instead. To configure the
     storage backend, call `Ambient_context.set_current_storage` (e.g.
