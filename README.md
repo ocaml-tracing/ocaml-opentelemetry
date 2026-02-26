@@ -7,10 +7,10 @@ connectors to talk to opentelemetry software such as [jaeger](https://www.jaeger
 
 - library `opentelemetry` should be used to instrument your code
   and possibly libraries. It doesn't communicate with anything except
-  a backend (default: dummy backend);
-- library `opentelemetry-client-ocurl` is a backend that communicates
+  an exporter (default: no-op);
+- library `opentelemetry-client-ocurl` is an exporter that communicates
   via http+protobuf with some collector (otelcol, datadog-agent, etc.) using cURL bindings;
-- library `opentelemetry-client-cohttp-lwt` is a backend that communicates
+- library `opentelemetry-client-cohttp-lwt` is an exporter that communicates
   via http+protobuf with some collector using cohttp.
 
 ## License
@@ -39,14 +39,14 @@ module Otel = Opentelemetry
 let (let@) = (@@)
 
 let foo () =
-  let@ scope = Otel.Trace.with_  "foo"
+  let@ span = Otel.Tracer.with_ "foo"
       ~attrs:["hello", `String "world"] in
-  do_work();
-  Otel.Metrics.(
-    emit [
-      gauge ~name:"foo.x" [int 42];
-    ]);
-  do_more_work();
+  do_work ();
+  let now = Otel.Clock.now Otel.Meter.default.clock in
+  Otel.Meter.emit1 Otel.Meter.default
+    Otel.Metrics.(gauge ~name:"foo.x" [int ~now 42]);
+  Otel.Span.add_event span (Otel.Event.make "work done");
+  do_more_work ();
   ()
 ```
 
@@ -56,14 +56,14 @@ If you're writing a top-level application, you need to perform some initial conf
 
 1. Set the [`service_name`][];
 2. optionally configure [ambient-context][] with the appropriate storage for your environment — TLS, Lwt, Eio…;
-3. and install a [`Collector`][] (usually by calling your collector's `with_setup` function.)
+3. and install an exporter (usually by calling your client library's `with_setup` function.)
 
 For example, if your application is using Lwt, and you're using `ocurl` as your collector, you might do something like this:
 
 ```ocaml
 let main () =
   Otel.Globals.service_name := "my_service";
-  Otel.GC_metrics.basic_setup();
+  Otel.Gc_metrics.setup ();
 
   Opentelemetry_ambient_context.set_storage_provider (Opentelemetry_ambient_context_lwt.storage ());
   Opentelemetry_client_ocurl.with_setup () @@ fun () ->
@@ -72,9 +72,12 @@ let main () =
   (* … *)
 ```
 
-  [`service_name`]: <https://v3.ocaml.org/p/opentelemetry/0.5/doc/Opentelemetry/Globals/index.html#val-service_name>
-  [`Collector`]: <https://v3.ocaml.org/p/opentelemetry/0.5/doc/Opentelemetry/Collector/index.html>
+  [`service_name`]: <https://v3.ocaml.org/p/opentelemetry/latest/doc/Opentelemetry/Globals/index.html#val-service_name>
   [ambient-context]: now vendored as `opentelemetry.ambient-context`, formerly <https://v3.ocaml.org/p/ambient-context>
+
+## Migration v012 → v0.13
+
+see `doc/migration_guide_v0.13.md`
 
 ## Configuration
 
@@ -104,20 +107,20 @@ The library supports standard OpenTelemetry environment variables:
 - `OTEL_EXPORTER_OTLP_LOGS_HEADERS` - logs-specific headers
 
 
-## Collector opentelemetry-client-ocurl
+## opentelemetry-client-ocurl
 
-This is a synchronous collector that uses the http+protobuf format
-to send signals (metrics, traces, logs) to some other collector (eg. `otelcol`
+This is a synchronous exporter that uses the http+protobuf format
+to send signals (metrics, traces, logs) to some collector (eg. `otelcol`
 or the datadog agent).
 
-Do note that this backend uses a thread pool and is incompatible
+Do note that it uses a thread pool and is incompatible
 with uses of `fork` on some Unixy systems.
 See [#68](https://github.com/imandra-ai/ocaml-opentelemetry/issues/68) for a possible workaround.
 
-## Collector opentelemetry-client-cohttp-lwt
+## opentelemetry-client-cohttp-lwt
 
-This is a Lwt-friendly collector that uses cohttp to send
-signals to some other collector (e.g. `otelcol`). It must be run
+This is a Lwt-friendly exporter that uses cohttp to send
+signals to some collector (e.g. `otelcol`). It must be run
 inside a `Lwt_main.run` scope.
 
 ## Opentelemetry-trace
