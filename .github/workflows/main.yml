@@ -46,6 +46,9 @@ jobs:
           opam pin pbrt 3.0.1 -y -n
           opam install pbrt -y
 
+      # TODO: remove when it's on opam
+      - run: opam pin ambient-context https://github.com/ocaml-tracing/ocaml-ambient-context.git -y -n
+
       # We cannot install packages that need eio on ocaml versions before 5
       - run: |
           packages=$(ls ./*.opam | grep -v eio)
@@ -59,7 +62,6 @@ jobs:
       - run: opam exec -- dune build @install -p opentelemetry,opentelemetry-lwt,opentelemetry-client-ocurl,opentelemetry-cohttp-lwt,opentelemetry-client-cohttp-lwt,opentelemetry-logs
 
       - run: opam pin trace --dev -y -n
-      - run: opam pin ambient-context https://github.com/ocaml-tracing/ocaml-ambient-context.git -y -n
       - run: opam install trace ambient-context
 
       - run: opam exec -- dune build @install -p opentelemetry
