@@ -139,7 +139,8 @@
    (>= "5.3"))
   (lwt_ppx
    (>= "2.0"))
-  cohttp-lwt
+  (cohttp-lwt
+   (>= "6.0"))
   cohttp-lwt-unix
   (alcotest :with-test)
   (containers :with-test))
