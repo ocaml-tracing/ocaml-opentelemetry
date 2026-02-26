@@ -131,7 +131,8 @@ end = struct
     mutable send_threads: Thread.t array;  (** Threads that send data via http *)
   }
 
-  let send_http_ ~stop ~(config : Config.t) (client : Curl.t) ~url data : unit =
+  let send_http_ ~stop ~(config : Config.t) (client : Ezcurl_core.t) ~url data :
+      unit =
     let@ _sc =
       Self_trace.with_ ~kind:Span.Span_kind_producer "otel-ocurl.send-http"
     in

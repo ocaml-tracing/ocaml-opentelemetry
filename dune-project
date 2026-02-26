@@ -40,7 +40,10 @@
     (>= 3.0)
     (< 4.0)))
   (ocaml-lsp-server :with-dev-setup)
-  (ambient-context (and (>= 0.2) (< 0.3)))
+  (ambient-context
+   (and
+    (>= 0.2)
+    (< 0.3)))
   (ocamlformat
    (and
     :with-dev-setup
@@ -84,7 +87,9 @@
    (= :version))
   (odoc :with-doc)
   (ezcurl
-   (>= 0.2.3))
+   (and
+    (>= 0.3)
+    (< 0.4)))
   ocurl
   (alcotest :with-test))
  (synopsis "Collector client for opentelemetry, using http + ezcurl"))
