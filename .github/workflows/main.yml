@@ -47,7 +47,7 @@ jobs:
           opam install pbrt -y
 
       # TODO: remove when it's on opam
-      - run: opam pin ambient-context https://github.com/ocaml-tracing/ocaml-ambient-context.git -y -n
+      - run: opam pin ambient-context https://github.com/ocaml-tracing/ambient-context.git -y -n
 
       # We cannot install packages that need eio on ocaml versions before 5
       - run: |
