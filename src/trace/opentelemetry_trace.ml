@@ -37,6 +37,29 @@ end
 
 open Extensions
 
+module Ambient_span_provider_ = struct
+  let get_current_span () =
+    match Otel.Scope.get_ambient_scope () with
+    | None -> None
+    | Some scope -> Some (Span_otel (span_info_of_scope_exn scope))
+
+  let with_current_span_set_to () span f =
+    match span with
+    | Span_otel span_info ->
+      Otel.Scope.with_ambient_scope (scope_of_span_info span_info) (fun () ->
+          f span)
+    | _ -> f span
+
+  let callbacks : unit Trace.Ambient_span_provider.Callbacks.t =
+    { get_current_span; with_current_span_set_to }
+
+  let provider = Trace.Ambient_span_provider.ASP_some ((), callbacks)
+end
+
+(* make sure we use [Ambient_context] as ambient span provider for [Trace] *)
+let setup_ambient_span_provider_ () =
+  Trace.set_ambient_context_provider Ambient_span_provider_.provider
+
 module Collector_ = struct
   let enter_span' ?(parent_span : Trace.span option) ~__FUNCTION__ ~__FILE__
       ~__LINE__ ~data name : span_info =
@@ -161,28 +184,11 @@ module Collector_ = struct
       Otel.Scope.record_exception sb.scope exn bt
     | _ -> ()
 
+  let init _st = setup_ambient_span_provider_ ()
+
   let callbacks : unit Trace.Collector.Callbacks.t =
     Trace.Collector.Callbacks.make ~enter_span ~exit_span ~add_data_to_span
-      ~message ~metric ~extension ()
-end
-
-module Ambient_span_provider_ = struct
-  let get_current_span () =
-    match Otel.Scope.get_ambient_scope () with
-    | None -> None
-    | Some scope -> Some (Span_otel (span_info_of_scope_exn scope))
-
-  let with_current_span_set_to () span f =
-    match span with
-    | Span_otel span_info ->
-      Otel.Scope.with_ambient_scope (scope_of_span_info span_info) (fun () ->
-          f span)
-    | _ -> f span
-
-  let callbacks : unit Trace.Ambient_span_provider.Callbacks.t =
-    { get_current_span; with_current_span_set_to }
-
-  let provider = Trace.Ambient_span_provider.ASP_some ((), callbacks)
+      ~init ~message ~metric ~extension ()
 end
 
 let link_spans (sp1 : Trace.span) (sp2 : Trace.span) : unit =
@@ -204,9 +210,7 @@ let ambient_span_provider = Ambient_span_provider_.provider
 let collector () : Trace.collector =
   Trace_core.Collector.C_some ((), Collector_.callbacks)
 
-let setup () =
-  Trace.set_ambient_context_provider Ambient_span_provider_.provider;
-  Trace.setup_collector @@ collector ()
+let setup () = Trace.setup_collector @@ collector ()
 
 let setup_with_otel_backend b : unit =
   Otel.Collector.set_backend b;
