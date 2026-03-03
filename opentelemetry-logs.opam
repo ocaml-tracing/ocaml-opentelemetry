@@ -7,15 +7,19 @@ maintainer: [
   "Matt Bray <mattjbray@gmail.com>"
   "ELLIOTTCABLE <opam@ell.io>"
 ]
-authors: ["the Imandra team and contributors"]
+authors: ["the Imandra team" "ocaml-tracing contributors"]
 license: "MIT"
-homepage: "https://github.com/imandra-ai/ocaml-opentelemetry"
-bug-reports: "https://github.com/imandra-ai/ocaml-opentelemetry/issues"
+homepage: "https://github.com/ocaml-tracing/ocaml-opentelemetry"
+bug-reports: "https://github.com/ocaml-tracing/ocaml-opentelemetry/issues"
 depends: [
   "dune" {>= "2.9"}
   "ocaml" {>= "4.08"}
   "opentelemetry" {= version}
   "odoc" {with-doc}
+  "containers" {>= "3.12" & with-test}
+  "cohttp-lwt-unix" {with-test}
+  "opentelemetry-client-cohttp-lwt" {= version & with-test}
+  "opentelemetry-cohttp-lwt" {= version & with-test}
   "logs" {>= "0.7.0"}
   "alcotest" {with-test}
 ]
@@ -35,4 +39,4 @@ build: [
   ]
   ["dune" "install" "-p" name "--create-install-files" name]
 ]
-dev-repo: "git+https://github.com/imandra-ai/ocaml-opentelemetry.git"
+dev-repo: "git+https://github.com/ocaml-tracing/ocaml-opentelemetry.git"

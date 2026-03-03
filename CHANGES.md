@@ -6,6 +6,8 @@
     `ambient-context` 0.2 package directly instead. To configure the
     storage backend, call `Ambient_context.set_current_storage` (e.g.
     `Ambient_context.set_current_storage Ambient_context_lwt.storage`).
+- move to ezcurl 0.3
+- add a `hmap` in Scope.t
 
 ## 0.12
 

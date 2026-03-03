@@ -5,11 +5,11 @@
 (generate_opam_files true)
 
 (source
- (github imandra-ai/ocaml-opentelemetry))
+ (github ocaml-tracing/ocaml-opentelemetry))
 
 (version 0.12)
 
-(authors "the Imandra team and contributors")
+(authors "the Imandra team" "ocaml-tracing contributors")
 
 (maintainers
  "Simon Cruanes <simon.cruanes.2007@m4x.org>"
@@ -33,6 +33,8 @@
    (and
     (>= 0.2)
     (< 0.3)))
+  (mtime
+   (>= "2.0"))
   (odoc :with-doc)
   (alcotest :with-test)
   (pbrt
@@ -102,6 +104,19 @@
   (opentelemetry
    (= :version))
   (odoc :with-doc)
+  (containers
+   (and
+    (>= 3.12)
+    :with-test))
+  (cohttp-lwt-unix :with-test)
+  (opentelemetry-client-cohttp-lwt
+   (and
+    (= :version)
+    :with-test))
+  (opentelemetry-cohttp-lwt
+   (and
+    (= :version)
+    :with-test))
   (logs
    (>= "0.7.0"))
   (alcotest :with-test))
@@ -135,6 +150,8 @@
   (opentelemetry
    (= :version))
   (odoc :with-doc)
+  (opentelemetry-lwt
+   (= :version))
   (lwt
    (>= "5.3"))
   (lwt_ppx
@@ -160,8 +177,16 @@
   (odoc :with-doc)
   (cohttp-eio
    (>= 6.1.0))
+  (eio
+   (>= 1.2))
   (eio_main :with-test)
-  tls-eio
+  (tls-eio
+   (>= 2.0))
+  (cohttp-lwt-unix :with-test)
+  (lwt_ppx
+   (and
+    (>= 2.0)
+    :with-test))
   (alcotest :with-test)
   (containers :with-test))
  (synopsis "Collector client for opentelemetry, using cohttp + eio"))

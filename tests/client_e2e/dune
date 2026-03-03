@@ -33,7 +33,7 @@
  (package opentelemetry-client-cohttp-lwt)
  (enabled_if
   (>= %{ocaml_version} 5.0))
- (deps %{bin:emit1_cohttp} %{bin:emit1_eio})
+ (deps %{bin:emit1_cohttp})
  (libraries clients_e2e_lib alcotest opentelemetry opentelemetry.client))
 
 (tests

@@ -7,11 +7,11 @@ maintainer: [
   "Matt Bray <mattjbray@gmail.com>"
   "ELLIOTTCABLE <opam@ell.io>"
 ]
-authors: ["the Imandra team and contributors"]
+authors: ["the Imandra team" "ocaml-tracing contributors"]
 license: "MIT"
 tags: ["instrumentation" "tracing" "opentelemetry" "datadog" "jaeger"]
-homepage: "https://github.com/imandra-ai/ocaml-opentelemetry"
-bug-reports: "https://github.com/imandra-ai/ocaml-opentelemetry/issues"
+homepage: "https://github.com/ocaml-tracing/ocaml-opentelemetry"
+bug-reports: "https://github.com/ocaml-tracing/ocaml-opentelemetry/issues"
 depends: [
   "dune" {>= "2.9"}
   "ocaml" {>= "4.08"}
@@ -19,6 +19,7 @@ depends: [
   "hmap"
   "atomic"
   "thread-local-storage" {>= "0.2" & < "0.3"}
+  "mtime" {>= "2.0"}
   "odoc" {with-doc}
   "alcotest" {with-test}
   "pbrt" {>= "3.0" & < "4.0"}
@@ -46,4 +47,4 @@ build: [
   ]
   ["dune" "install" "-p" name "--create-install-files" name]
 ]
-dev-repo: "git+https://github.com/imandra-ai/ocaml-opentelemetry.git"
+dev-repo: "git+https://github.com/ocaml-tracing/ocaml-opentelemetry.git"
