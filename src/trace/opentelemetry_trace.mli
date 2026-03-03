@@ -49,11 +49,12 @@ val setup : unit -> unit
 val setup_with_otel_backend : Opentelemetry.Collector.backend -> unit
 (** Same as {!setup}, but also install the given backend as OTEL backend *)
 
-val collector : unit -> Trace_core.collector
+val collector : Trace_core.collector
 (** Make a Trace collector that uses the OTEL backend to send spans and logs *)
 
 val ambient_span_provider : Trace_core.Ambient_span_provider.t
-(** Uses {!Ambient_context} to provide contextual spans in {!Trace_core}.*)
+(** Uses {!Ambient_context} to provide contextual spans in {!Trace_core}. It is
+    automatically installed by the {!collector}. *)
 
 val link_spans : Otrace.span -> Otrace.span -> unit
 (** [link_spans sp1 sp2] modifies [sp1] by adding a span link to [sp2].
