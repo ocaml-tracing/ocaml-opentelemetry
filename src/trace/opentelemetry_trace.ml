@@ -207,10 +207,10 @@ let with_ambient_span (sp : Trace.span) f =
 
 let ambient_span_provider = Ambient_span_provider_.provider
 
-let collector () : Trace.collector =
+let collector : Trace.collector =
   Trace_core.Collector.C_some ((), Collector_.callbacks)
 
-let setup () = Trace.setup_collector @@ collector ()
+let setup () = Trace.setup_collector collector
 
 let setup_with_otel_backend b : unit =
   Otel.Collector.set_backend b;
