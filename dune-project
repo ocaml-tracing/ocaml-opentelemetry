@@ -5,11 +5,11 @@
 (generate_opam_files true)
 
 (source
- (github imandra-ai/ocaml-opentelemetry))
+ (github ocaml-tracing/ocaml-opentelemetry))
 
 (version 0.12)
 
-(authors "the Imandra team and contributors")
+(authors "the Imandra team" "ocaml-tracing contributors")
 
 (maintainers
  "Simon Cruanes <simon.cruanes.2007@m4x.org>"
