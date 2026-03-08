@@ -214,7 +214,7 @@
   (mtime
    (>= "1.4"))
   ca-certs
-  mirage-crypto-rng-eio
+  mirage-crypto-rng
   ambient-context-eio
   (opentelemetry
    (= :version))
