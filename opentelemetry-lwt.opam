@@ -13,7 +13,7 @@ tags: ["instrumentation" "tracing" "opentelemetry" "datadog" "lwt"]
 homepage: "https://github.com/imandra-ai/ocaml-opentelemetry"
 bug-reports: "https://github.com/imandra-ai/ocaml-opentelemetry/issues"
 depends: [
-  "dune" {>= "2.9"}
+  "dune" {>= "3.11"}
   "ocaml" {>= "4.08"}
   "opentelemetry" {= version}
   "ambient-context-lwt"
@@ -32,11 +32,9 @@ build: [
     name
     "-j"
     jobs
-    "--promote-install-files=false"
     "@install"
     "@runtest" {with-test}
     "@doc" {with-doc}
   ]
-  ["dune" "install" "-p" name "--create-install-files" name]
 ]
 dev-repo: "git+https://github.com/imandra-ai/ocaml-opentelemetry.git"
