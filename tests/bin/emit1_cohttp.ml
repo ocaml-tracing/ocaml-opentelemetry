@@ -2,7 +2,6 @@ module T = Opentelemetry_lwt
 module Atomic = Opentelemetry_atomic.Atomic
 open Lwt.Syntax
 
-let spf = Printf.sprintf
 
 let ( let@ ) f x = f x
 

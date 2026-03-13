@@ -1,7 +1,6 @@
 module OT = Opentelemetry
 module Otel_lwt = Opentelemetry_lwt
 
-let spf = Printf.sprintf
 
 let ( let@ ) f x = f x
 

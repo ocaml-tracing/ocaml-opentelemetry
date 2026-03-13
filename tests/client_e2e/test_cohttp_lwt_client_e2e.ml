@@ -1,5 +1,3 @@
-module Client = Opentelemetry_client
-module Proto = Opentelemetry.Proto
 open Clients_e2e_lib
 
 (* NOTE: This port must be different from that used by other integration tests,

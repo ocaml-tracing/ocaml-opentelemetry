@@ -1,7 +1,6 @@
 module OT = Opentelemetry
 module Atomic = Opentelemetry_atomic.Atomic
 
-let spf = Printf.sprintf
 
 let ( let@ ) f x = f x
 

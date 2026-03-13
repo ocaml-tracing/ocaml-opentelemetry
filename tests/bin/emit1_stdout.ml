@@ -1,7 +1,6 @@
 module OT = Opentelemetry
 module OTC = Opentelemetry_client
 
-let spf = Printf.sprintf
 
 let ( let@ ) = ( @@ )
 
