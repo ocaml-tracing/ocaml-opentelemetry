@@ -5,7 +5,7 @@ module IO = Io_lwt
 type t = {
   notified: bool Atomic.t;
   cond: unit Lwt_condition.t;
-  notification: int;
+  notification: Types_.notification;
   lwt_tid: int;  (** thread ID where lwt runs *)
   deleted: bool Atomic.t;
 }

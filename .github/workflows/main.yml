@@ -42,10 +42,8 @@ jobs:
           allow-prerelease-opam: true
 
       - run: |
-          opam pin trace https://github.com/ocaml-tracing/ocaml-trace.git#main -y -n
-          opam pin https://github.com/ocaml-tracing/ambient-context.git#HEAD -y -n
           opam install pbrt.4.0 -y
-          opam install ambient-context
+          opam install ambient-context lwt.5.9.2
 
       # We cannot install packages that need eio on ocaml versions before 5
       - run: |
@@ -61,6 +59,11 @@ jobs:
 
       - run: opam install trace
       - run: opam exec -- dune build @install -p opentelemetry
+
+      - run: opam install lwt.6.1.1 -y
+        if: ${{ matrix.ocaml-compiler == '5.3.x' }}
+      - run: opam exec -- dune build @install -p opentelemetry,opentelemetry-client,opentelemetry-lwt,opentelemetry-client-cohttp-lwt
+        if: ${{ matrix.ocaml-compiler == '5.3.x' }}
 
       - run: opam install ocaml-protoc
       - run: opam exec -- dune build @lint

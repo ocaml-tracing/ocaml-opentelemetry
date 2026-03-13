@@ -25,3 +25,19 @@
   mtime.clock.os
   lwt.unix)
  (synopsis "Lwt-specific helpers for opentelemetry-client"))
+
+(rule
+ (enabled_if
+  (and
+   %{lib-available:lwt}
+   (>= %{version:lwt} 6.0)))
+ (action
+  (copy types_.ml.6 types_.ml)))
+
+(rule
+ (enabled_if
+  (and
+   %{lib-available:lwt}
+   (< %{version:lwt} 6.0)))
+ (action
+  (copy types_.ml.5 types_.ml)))
