@@ -1,7 +1,6 @@
 module OT = Opentelemetry
 module Atomic = Opentelemetry_atomic.Atomic
 
-
 let ( let@ ) f x = f x
 
 let sleep_inner = ref 0.1

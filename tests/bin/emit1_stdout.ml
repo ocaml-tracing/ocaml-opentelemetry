@@ -1,7 +1,6 @@
 module OT = Opentelemetry
 module OTC = Opentelemetry_client
 
-
 let ( let@ ) = ( @@ )
 
 let sleep_inner = ref 0.1

@@ -1,7 +1,6 @@
 module OT = Opentelemetry
 module Otel_lwt = Opentelemetry_lwt
 
-
 let ( let@ ) f x = f x
 
 let sleep_inner = ref 0.1
