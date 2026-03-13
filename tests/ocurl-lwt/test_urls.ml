@@ -1,4 +1,3 @@
-module OT = Opentelemetry
 module C = Opentelemetry_client_ocurl_lwt
 
 let () =
