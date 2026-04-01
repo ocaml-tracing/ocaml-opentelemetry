@@ -75,9 +75,9 @@ let main () =
   [`service_name`]: <https://v3.ocaml.org/p/opentelemetry/latest/doc/Opentelemetry/Globals/index.html#val-service_name>
   [ambient-context]: now vendored as `opentelemetry.ambient-context`, formerly <https://v3.ocaml.org/p/ambient-context>
 
-## Migration v012 → v0.13
+## Migration 0.13 → v0.90
 
-see `doc/migration_guide_v0.13.md`
+see `doc/migration_guide_v0.90.md`
 
 ## Configuration
 

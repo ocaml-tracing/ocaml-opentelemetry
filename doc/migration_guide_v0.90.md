@@ -1,23 +1,23 @@
-# Migration guide: v0.12 → v0.13
+# Migration guide: v0.13 → v0.90
 
-This guide covers breaking changes when upgrading from v0.12.
+This guide covers breaking changes when upgrading from v0.13.
 
 ## 1. Backend setup: `Collector` → `Sdk` + `Exporter`
 
-v0.12 used a first-class module `BACKEND` installed into a global slot via
-`Collector.set_backend`.  v0.13 replaces this with a plain record `Exporter.t`
+v0.13 used a first-class module `BACKEND` installed into a global slot via
+`Collector.set_backend`.  v0.90 replaces this with a plain record `Exporter.t`
 installed via `Sdk.set`.
 
 The `with_setup` helper in each client library still exists, so if you use that
 you mainly need to rename the module.
 
 ```ocaml
-(* v0.12 *)
+(* v0.13 *)
 Opentelemetry_client_ocurl.with_setup ~config () (fun () ->
   (* your code *)
   ())
 
-(* v0.13: same call, internals changed; ~stop removed, ~after_shutdown added *)
+(* v0.90: same call, internals changed; ~stop removed, ~after_shutdown added *)
 Opentelemetry_client_ocurl.with_setup
   ~after_shutdown:(fun _exp -> ())
   ~config () (fun () ->
@@ -28,12 +28,12 @@ Opentelemetry_client_ocurl.with_setup
 If you called `setup`/`remove_backend` manually:
 
 ```ocaml
-(* v0.12 *)
+(* v0.13 *)
 Opentelemetry_client_ocurl.setup ~config ()
 (* ... *)
 Opentelemetry_client_ocurl.remove_backend ()
 
-(* v0.13 *)
+(* v0.90 *)
 Opentelemetry_client_ocurl.setup ~config ()
 (* ... *)
 Opentelemetry_client_ocurl.remove_exporter ()
@@ -48,14 +48,14 @@ The most common migration. The module is renamed and the callback argument type
 changes from `Scope.t` to `Span.t`.
 
 ```ocaml
-(* v0.12 *)
+(* v0.13 *)
 Trace.with_ "my-op" ~attrs:["k", `String "v"] (fun (scope : Scope.t) ->
   Scope.add_event scope (fun () -> Event.make "something happened");
   Scope.add_attrs scope (fun () -> ["extra", `Int 42]);
   do_work ()
 )
 
-(* v0.13 *)
+(* v0.90 *)
 Tracer.with_ "my-op" ~attrs:["k", `String "v"] (fun (span : Span.t) ->
   Span.add_event span (Event.make "something happened");
   Span.add_attrs span ["extra", `Int 42];
@@ -67,7 +67,7 @@ Tracer.with_ "my-op" ~attrs:["k", `String "v"] (fun (span : Span.t) ->
 
 Key differences on the callback argument:
 
-| v0.12 (`Scope.t`)                          | v0.13 (`Span.t`)                     |
+| v0.13 (`Scope.t`)                          | v0.90 (`Span.t`)                     |
 |--------------------------------------------|--------------------------------------|
 | `scope.trace_id`                           | `Span.trace_id span`                 |
 | `scope.span_id`                            | `Span.id span`                       |
@@ -82,10 +82,10 @@ Key differences on the callback argument:
 The `~scope` parameter of `Trace.with_` is renamed to `~parent`:
 
 ```ocaml
-(* v0.12 *)
+(* v0.13 *)
 Trace.with_ "child" ~scope:parent_scope (fun child -> ...)
 
-(* v0.13 *)
+(* v0.90 *)
 Tracer.with_ "child" ~parent:parent_span (fun child -> ...)
 ```
 
@@ -100,7 +100,7 @@ Direct construction of log records and batch-emit is replaced by convenience
 functions.
 
 ```ocaml
-(* v0.12 *)
+(* v0.13 *)
 Logs.emit [
   Logs.make_str ~severity:Severity_number_warn "something went wrong"
 ]
@@ -109,22 +109,22 @@ Logs.emit [
   Logs.make_strf ~severity:Severity_number_info "processed %d items" n
 ]
 
-(* v0.13: simple string *)
+(* v0.90: simple string *)
 Logger.log ~severity:Severity_number_warn "something went wrong"
 
-(* v0.13: formatted *)
+(* v0.90: formatted *)
 Logger.logf ~severity:Severity_number_info (fun k -> k "processed %d items" n)
 ```
 
 If you need to keep the trace/span correlation:
 
 ```ocaml
-(* v0.12 *)
+(* v0.13 *)
 Logs.emit [
   Logs.make_str ~trace_id ~span_id ~severity:Severity_number_info "ok"
 ]
 
-(* v0.13 *)
+(* v0.90 *)
 Logger.log ~trace_id ~span_id ~severity:Severity_number_info "ok"
 ```
 
@@ -133,17 +133,17 @@ records manually and emit them via a `Logger.t`.
 
 ## 4. `Metrics.emit` → emit via a `Meter`
 
-In v0.12 `Metrics.emit` was a top-level function that sent directly to the
-collector. In v0.13 metrics go through a `Meter.t`.  For most code the change
+In v0.13 `Metrics.emit` was a top-level function that sent directly to the
+collector. In v0.90 metrics go through a `Meter.t`.  For most code the change
 is mechanical:
 
 ```ocaml
-(* v0.12 *)
+(* v0.13 *)
 Metrics.emit [
   Metrics.gauge ~name:"queue.depth" [ Metrics.int ~now depth ]
 ]
 
-(* v0.13: Meter.default emits to the global provider *)
+(* v0.90: Meter.default emits to the global provider *)
 Meter.emit1 Meter.default
   (Metrics.gauge ~name:"queue.depth" [ Metrics.int ~now depth ])
 ```
@@ -151,11 +151,11 @@ Meter.emit1 Meter.default
 `now` is now obtained from the meter's clock rather than `Timestamp_ns.now_unix_ns ()`:
 
 ```ocaml
-(* v0.12 *)
+(* v0.13 *)
 let now = Timestamp_ns.now_unix_ns () in
 Metrics.emit [ Metrics.sum ~name:"counter" [ Metrics.int ~now n ] ]
 
-(* v0.13 *)
+(* v0.90 *)
 let now = Clock.now Meter.default.clock in
 Meter.emit1 Meter.default
   (Metrics.sum ~name:"counter" [ Metrics.int ~now n ])
@@ -164,11 +164,11 @@ Meter.emit1 Meter.default
 ## 5. `Metrics_callbacks.register` → `Meter.add_cb`
 
 ```ocaml
-(* v0.12 *)
+(* v0.13 *)
 Metrics_callbacks.register (fun () ->
   [ Metrics.gauge ~name:"foo" [ Metrics.int ~now:... 42 ] ])
 
-(* v0.13: callback now receives a clock *)
+(* v0.90: callback now receives a clock *)
 Meter.add_cb (fun ~clock () ->
   let now = Clock.now clock in
   [ Metrics.gauge ~name:"foo" [ Metrics.int ~now 42 ] ])
@@ -177,11 +177,11 @@ Meter.add_cb (fun ~clock () ->
 After registering callbacks you must tell the SDK to drive them:
 
 ```ocaml
-(* v0.13: call once after setup to schedule periodic emission *)
+(* v0.90: call once after setup to schedule periodic emission *)
 Meter.add_to_main_exporter Meter.default
 ```
 
-In v0.12 this was automatic once `Metrics_callbacks.register` was called.
+In v0.13 this was automatic once `Metrics_callbacks.register` was called.
 
 ## 6. `GC_metrics.basic_setup` signature unchanged, `setup` changed
 
@@ -191,12 +191,12 @@ to `Gc_metrics`, but the former name persists as a deprecated alias.
 If you called the lower-level `GC_metrics.setup exp` directly:
 
 ```ocaml
-(* v0.12 *)
+(* v0.13 *)
 GC_metrics.setup exporter
 (* or *)
 GC_metrics.setup_on_main_exporter ()
 
-(* v0.13 *)
+(* v0.90 *)
 Gc_metrics.setup ()              (* uses Meter.default *)
 (* or with a specific meter: *)
 Gc_metrics.setup ~meter:my_meter ()
@@ -207,10 +207,10 @@ Gc_metrics.setup ~meter:my_meter ()
 ## 7. `Collector.on_tick` → `Sdk.add_on_tick_callback`
 
 ```ocaml
-(* v0.12 *)
+(* v0.13 *)
 Collector.on_tick (fun () -> do_background_work ())
 
-(* v0.13 *)
+(* v0.90 *)
 Sdk.add_on_tick_callback (fun () -> do_background_work ())
 ```
 
@@ -220,10 +220,10 @@ Sdk.add_on_tick_callback (fun () -> do_background_work ())
 override. This is no longer supported per-call; set it once globally:
 
 ```ocaml
-(* v0.12 *)
+(* v0.13 *)
 Trace.with_ "op" ~service_name:"my-svc" (fun _ -> ...)
 
-(* v0.13: set globally before setup *)
+(* v0.90: set globally before setup *)
 Opentelemetry.Globals.service_name := "my-svc"
 Tracer.with_ "op" (fun _ -> ...)
 ```
@@ -233,13 +233,13 @@ Tracer.with_ "op" (fun _ -> ...)
 If you held a reference to a backend module:
 
 ```ocaml
-(* v0.12 *)
+(* v0.13 *)
 let (module B : Collector.BACKEND) =
   Opentelemetry_client_ocurl.create_backend ~config ()
 in
 Collector.set_backend (module B)
 
-(* v0.13 *)
+(* v0.90 *)
 let exp : Exporter.t =
   Opentelemetry_client_ocurl.create_exporter ~config ()
 in
@@ -258,7 +258,7 @@ Sdk.set exp
 
 ## Quick checklist
 
-- [ ] `Trace.with_` → `Tracer.with_`; callback argument `Scope.t` → `Span.t`
+- [ ] `Otel.Trace.with_` → `Otel.Tracer.with_`; callback argument `Scope.t` → `Span.t`
 - [ ] `Scope.add_event`/`add_attrs` → `Span.add_event`/`add_attrs` (no thunk wrapper)
 - [ ] `~scope:` → `~parent:` in nested `with_` calls
 - [ ] `Logs.emit [Logs.make_str ...]` → `Logger.log`/`Logger.logf`

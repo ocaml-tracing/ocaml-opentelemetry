@@ -1,5 +1,5 @@
 
-## 0.20
+## 0.90
 
 - major refactor: split library into `opentelemetry.core`, `opentelemetry`,
   `opentelemetry.util`, `opentelemetry.emitter`, `opentelemetry.atomic`, revamp internals

@@ -1,3 +1,5 @@
+(** Hooks to add attributes to every span or log *)
+
 type t = unit -> Key_value.t list
 (** A dynamic enricher is a callback that produces high-cardinality attributes
     at span/log-record creation time. This enables "wide events". *)
