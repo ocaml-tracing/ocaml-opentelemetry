@@ -72,13 +72,13 @@ val link_spans : Otrace.span -> Otrace.span -> unit
 val link_span_to_otel_ctx : Otrace.span -> OTEL.Span_ctx.t -> unit
 (** [link_spans sp1 sp_ctx2] modifies [sp1] by adding a span link to [sp_ctx2].
     It must be the case that [sp1] is a currently active span.
-    @since NEXT_RELEASE *)
+    @since 0.90 *)
 
 val set_span_kind : Otrace.span -> OTEL.Span.kind -> unit
 (** [set_span_kind sp k] sets the span's kind. *)
 
 val set_span_status : Otrace.span -> OTEL.Span_status.t -> unit
-(** @since NEXT_RELEASE *)
+(** @since 0.90 *)
 
 val record_exception : Otrace.span -> exn -> Printexc.raw_backtrace -> unit
 (** Record exception in the current span. *)

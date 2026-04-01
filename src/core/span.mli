@@ -128,4 +128,4 @@ val default_kind : Span_kind.t ref
 
 val k_ambient : t Context.key
 (** Context key to carry around a {!Span.t} in ambient context.
-    @since NEXT_RELEASE *)
+    @since 0.90 *)

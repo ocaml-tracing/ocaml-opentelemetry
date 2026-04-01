@@ -20,7 +20,7 @@ let service_instance_id = ref None
     @since 0.12 *)
 let service_version = ref None
 
-(** @since NEXT_RELEASE *)
+(** @since 0.90 *)
 let sdk_version : string = Version.version
 
 let instrumentation_library =

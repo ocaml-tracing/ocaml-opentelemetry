@@ -24,7 +24,7 @@ val setup : ?config:Config.t -> ?enable:bool -> unit -> unit
 
 val remove_backend : unit -> unit Lwt.t
 (** Shutdown current backend
-    @since NEXT_RELEASE *)
+    @since 0.90 *)
 
 val with_setup :
   ?after_shutdown:(Opentelemetry.Exporter.t -> unit) ->

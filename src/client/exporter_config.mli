@@ -75,12 +75,12 @@ type t = {
   self_metrics: bool;
       (** If true, the OTEL library will regularly emit metrics about itself.
           Default [false].
-          @since NEXT_RELEASE *)
+          @since 0.90 *)
   http_concurrency_level: int option;
       (** How many HTTP requests can be done simultaneously (at most)? This can
           be used to represent the size of a pool of workers where each worker
           gets a batch to send, send it, and repeats.
-          @since NEXT_RELEASE *)
+          @since 0.90 *)
   retry_max_attempts: int;
       (** Maximum number of retry attempts for failed exports. 0 means no retry,
           1 means one retry after initial failure. Default 3. *)

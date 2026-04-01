@@ -10,7 +10,7 @@ val consumer :
 (** Consumer that pulls from a queue *)
 
 val create_exporter : ?config:Config.t -> unit -> Opentelemetry.Exporter.t
-(** @since NEXT_RELEASE *)
+(** @since 0.90 *)
 
 val create_backend : ?config:Config.t -> unit -> Opentelemetry.Exporter.t
 [@@deprecated "use create_exporter"]
@@ -26,7 +26,7 @@ val setup : ?config:Config.t -> ?enable:bool -> unit -> unit
       after a little while. *)
 
 val remove_exporter : unit -> unit
-(** @since NEXT_RELEASE *)
+(** @since 0.90 *)
 
 val remove_backend : unit -> unit
 [@@deprecated "use remove_exporter"]

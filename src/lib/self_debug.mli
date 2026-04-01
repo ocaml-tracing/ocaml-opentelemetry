@@ -8,7 +8,7 @@
       Self_debug.log Info (fun () -> Printf.sprintf "batch flushed %d items" n)
     ]}.
 
-    @since NEXT_RELEASE *)
+    @since 0.90 *)
 
 type level =
   | Debug

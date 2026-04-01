@@ -5,9 +5,9 @@
 (generate_opam_files true)
 
 (source
- (github imandra-ai/ocaml-opentelemetry))
+ (github ocaml-tracing/ocaml-opentelemetry))
 
-(version 0.12)
+(version 0.90)
 
 (implicit_transitive_deps false)
 

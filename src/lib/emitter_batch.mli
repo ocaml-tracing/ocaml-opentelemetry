@@ -5,7 +5,7 @@
     generally very fast (amortized), in most cases; the slow path is only when
     the batch needs to be emitted.
 
-    @since NEXT_RELEASE *)
+    @since 0.90 *)
 
 open Opentelemetry_emitter
 

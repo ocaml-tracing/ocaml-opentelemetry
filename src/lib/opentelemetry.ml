@@ -5,7 +5,7 @@ module Core = Opentelemetry_core
 
 module Interval_limiter = Interval_limiter
 (** Utility to limit the frequency of some event
-    @since NEXT_RELEASE *)
+    @since 0.90 *)
 
 (** {2 Wire format} *)
 
@@ -27,15 +27,15 @@ module Exporter = struct
   include Exporter
 
   (** Get a tracer from this exporter.
-      @since NEXT_RELEASE *)
+      @since 0.90 *)
   let get_tracer (self : t) : Tracer.t = Tracer.of_exporter self
 
   (** Get a meter from this exporter.
-      @since NEXT_RELEASE *)
+      @since 0.90 *)
   let get_meter (self : t) : Meter.t = Meter.of_exporter self
 
   (** Get a logger from this exporter.
-      @since NEXT_RELEASE *)
+      @since 0.90 *)
   let get_logger (self : t) : Logger.t = Logger.of_exporter self
 end
 
@@ -43,17 +43,17 @@ module Sdk = struct
   include Sdk
 
   (** Get a tracer forwarding to the current main exporter.
-      @since NEXT_RELEASE *)
+      @since 0.90 *)
   let get_tracer ?name ?version ?attrs ?__MODULE__ () =
     Trace_provider.get_tracer ?name ?version ?attrs ?__MODULE__ ()
 
   (** Get a meter forwarding to the current main exporter.
-      @since NEXT_RELEASE *)
+      @since 0.90 *)
   let get_meter ?name ?version ?attrs ?__MODULE__ () =
     Meter_provider.get_meter ?name ?version ?attrs ?__MODULE__ ()
 
   (** Get a logger forwarding to the current main exporter.
-      @since NEXT_RELEASE *)
+      @since 0.90 *)
   let get_logger ?name ?version ?attrs ?__MODULE__ () =
     Log_provider.get_logger ?name ?version ?attrs ?__MODULE__ ()
 
@@ -165,7 +165,7 @@ module Trace_context = Trace_context
 module Gc_metrics = Gc_metrics
 
 module Aswitch = Aswitch
-(** @since NEXT_RELEASE *)
+(** @since 0.90 *)
 
 module Alist = Alist
 (** Atomic list, for internal usage

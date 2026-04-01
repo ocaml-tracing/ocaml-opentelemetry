@@ -10,7 +10,7 @@
     than [add_batching (limit_interval ~min_interval e)], because in the later
     case we might be dismissing a whole large batch at ine
 
-    @since NEXT_RELEASE *)
+    @since 0.90 *)
 
 open Common_.OTEL
 
