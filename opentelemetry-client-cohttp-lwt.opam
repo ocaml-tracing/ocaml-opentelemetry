@@ -2,12 +2,8 @@
 opam-version: "2.0"
 version: "0.12"
 synopsis: "Collector client for opentelemetry, using cohttp + lwt"
-maintainer: [
-  "Simon Cruanes <simon.cruanes.2007@m4x.org>"
-  "Matt Bray <mattjbray@gmail.com>"
-  "ELLIOTTCABLE <opam@ell.io>"
-]
-authors: ["the Imandra team and contributors"]
+maintainer: ["ocaml-tracing"]
+authors: ["ocaml-tracing" "ELLIOTTCABLE <opam@ell.io>" "the imandra team"]
 license: "MIT"
 homepage: "https://github.com/imandra-ai/ocaml-opentelemetry"
 bug-reports: "https://github.com/imandra-ai/ocaml-opentelemetry/issues"
