@@ -23,6 +23,8 @@ depends: [
   "alcotest" {with-test}
   "containers" {with-test}
   "cohttp-lwt-unix" {with-test}
+  "logs" {with-test}
+  "opentelemetry-lwt" {with-test & = version}
 ]
 build: [
   ["dune" "subst"] {dev}

@@ -16,9 +16,13 @@ depends: [
   "odoc" {with-doc}
   "ezcurl-lwt" {>= "0.2.3"}
   "ocurl"
-  "lwt" {>= "5.3"}
+  "lwt" {>= "5.7.3"}
   "lwt_ppx" {>= "2.0"}
+  "ambient-context-lwt"
   "alcotest" {with-test}
+  "cohttp-lwt-unix" {with-test}
+  "containers" {with-test}
+  "logs" {with-test}
 ]
 build: [
   ["dune" "subst"] {dev}

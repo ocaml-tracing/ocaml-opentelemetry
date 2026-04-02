@@ -16,6 +16,7 @@ depends: [
   "hmap"
   "odoc" {with-doc}
   "alcotest" {with-test}
+  "opentelemetry-client" {with-test & = version}
   "pbrt" {>= "4.0" & < "5.0"}
   "pbrt_yojson" {>= "4.0" & < "5.0"}
   "ambient-context" {>= "0.2"}

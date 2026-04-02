@@ -17,6 +17,9 @@ depends: [
   "ezcurl" {>= "0.2.3"}
   "ocurl"
   "alcotest" {with-test}
+  "cohttp-lwt-unix" {with-test}
+  "containers" {with-test}
+  "logs" {with-test}
 ]
 build: [
   ["dune" "subst"] {dev}

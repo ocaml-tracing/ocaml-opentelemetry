@@ -31,6 +31,10 @@
   hmap
   (odoc :with-doc)
   (alcotest :with-test)
+  (opentelemetry-client
+   (and
+    :with-test
+    (= :version)))
   (pbrt
    (and
     (>= 4.0)
@@ -107,7 +111,10 @@
   (ezcurl
    (>= 0.2.3))
   ocurl
-  (alcotest :with-test))
+  (alcotest :with-test)
+  (cohttp-lwt-unix :with-test)
+  (containers :with-test)
+  (logs :with-test))
  (synopsis "Collector client for opentelemetry, using http + ezcurl"))
 
 (package
@@ -126,10 +133,14 @@
    (>= 0.2.3))
   ocurl
   (lwt
-   (>= "5.3"))
+   (>= "5.7.3"))
   (lwt_ppx
    (>= "2.0"))
-  (alcotest :with-test))
+  ambient-context-lwt
+  (alcotest :with-test)
+  (cohttp-lwt-unix :with-test)
+  (containers :with-test)
+  (logs :with-test))
  (synopsis "Collector client for opentelemetry, using ezcurl-lwt"))
 
 (package
@@ -227,5 +238,10 @@
    (>= 2.0.1))
   (alcotest :with-test)
   (containers :with-test)
-  (cohttp-lwt-unix :with-test))
+  (cohttp-lwt-unix :with-test)
+  (logs :with-test)
+  (opentelemetry-lwt
+   (and
+    :with-test
+    (= :version))))
  (synopsis "Collector client for opentelemetry, using cohttp + eio"))
