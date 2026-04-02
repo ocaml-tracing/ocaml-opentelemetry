@@ -9,6 +9,7 @@
   Opentelemetry_client
   -open
   Opentelemetry_atomic)
+ (modules :standard \ gen_types_)
  (optional) ; lwt
  (libraries
   opentelemetry.util
@@ -26,18 +27,13 @@
   lwt.unix)
  (synopsis "Lwt-specific helpers for opentelemetry-client"))
 
-(rule
- (enabled_if
-  (and
-   %{lib-available:lwt}
-   (>= %{version:lwt} 6.0)))
- (action
-  (copy types_.ml.6 types_.ml)))
+(executable
+ (name gen_types_)
+ (modules gen_types_))
 
 (rule
- (enabled_if
-  (and
-   %{lib-available:lwt}
-   (< %{version:lwt} 6.0)))
+ (enabled_if %{lib-available:lwt})
+ (deps types_.ml.5 types_.ml.6)
+ (target types_.ml)
  (action
-  (copy types_.ml.5 types_.ml)))
+  (run ./gen_types_.exe %{version:lwt})))
