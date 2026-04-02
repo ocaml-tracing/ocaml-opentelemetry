@@ -57,7 +57,7 @@ let minimum_min_interval_ = Mtime.Span.(100 * ms)
 let default_min_interval_ = Mtime.Span.(4 * s)
 
 let clamp_interval_ interval =
-  if Mtime.Span.is_shorter interval ~than:minimum_min_interval_ then
+  if Mtime.Span.compare interval minimum_min_interval_ < 0 then
     minimum_min_interval_
   else
     interval
