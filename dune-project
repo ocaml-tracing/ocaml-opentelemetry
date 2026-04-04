@@ -31,10 +31,6 @@
   hmap
   (odoc :with-doc)
   (alcotest :with-test)
-  (opentelemetry-client
-   (and
-    :with-test
-    (= :version)))
   (pbrt
    (and
     (>= 4.0)
