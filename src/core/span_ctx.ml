@@ -2,8 +2,6 @@ open Common_
 
 (* see: https://opentelemetry.io/docs/specs/otel/trace/api/#spancontext *)
 
-(* TODO: trace state *)
-
 external int_of_bool : bool -> int = "%identity"
 
 module Flags = struct
@@ -16,17 +14,25 @@ type t = {
   trace_id: Trace_id.t;
   parent_id: Span_id.t;
   flags: int;
+  trace_state: Trace_state.t;  (** W3C trace state for distributed tracing *)
 }
 
-let dummy = { trace_id = Trace_id.dummy; parent_id = Span_id.dummy; flags = 0 }
+let dummy =
+  {
+    trace_id = Trace_id.dummy;
+    parent_id = Span_id.dummy;
+    flags = 0;
+    trace_state = [];
+  }
 
-let make ?(remote = false) ?(sampled = false) ~trace_id ~parent_id () : t =
+let make ?(remote = false) ?(sampled = false) ?(trace_state = Trace_state.empty)
+    ~trace_id ~parent_id () : t =
   let flags =
     0
     lor (int_of_bool remote lsl Flags.remote)
     lor (int_of_bool sampled lsl Flags.sampled)
   in
-  { trace_id; parent_id; flags }
+  { trace_id; parent_id; flags; trace_state }
 
 let[@inline] is_valid self =
   Trace_id.is_valid self.trace_id && Span_id.is_valid self.parent_id
@@ -38,6 +44,8 @@ let[@inline] is_remote self = self.flags land (1 lsl Flags.remote) != 0
 let[@inline] trace_id self = self.trace_id
 
 let[@inline] parent_id self = self.parent_id
+
+let[@inline] trace_state self = self.trace_state
 
 let to_w3c_trace_context (self : t) : bytes =
   let bs = Bytes.create 55 in

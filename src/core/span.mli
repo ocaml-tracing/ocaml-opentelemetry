@@ -79,6 +79,17 @@ val status : t -> Span_status.t option
 
 val kind : t -> Span_kind.t option
 
+val trace_state : t -> Trace_state.t
+(** Returns the decoded trace state, or [[]] if absent or invalid. *)
+
+val add_trace_state_attr : t -> string -> string -> unit
+(** [add_trace_state_attr span key value] prepends/replaces the [key=value]
+    entry in the span's trace state.
+
+    This is not the most efficient, as it'll copy the whole string to append to
+    it.
+    @raise Invalid_argument if [key] or [value] are invalid per W3C rules. *)
+
 val to_span_link : t -> Span_link.t
 (** Turn the scope into a span link *)
 
