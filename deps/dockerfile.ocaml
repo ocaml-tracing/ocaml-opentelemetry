@@ -4,12 +4,14 @@ ARG BASE_OS=ubuntu:24.04
 FROM $BASE_OS AS base
 ARG BASE_OS_PACKAGES=""
 ENV OPAMROOTISOK=1 OPAMYES=1 OPAMCONFIRMLEVEL=unsafe-yes
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates curl git unzip build-essential $BASE_OS_PACKAGES && \
-    rm -rf /var/lib/apt/lists/* && \
-    curl -fsSL https://github.com/ocaml/opam/releases/download/2.5.0/opam-2.5.0-x86_64-linux -o /usr/local/bin/opam && \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -f /etc/apt/apt.conf.d/docker-clean && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates curl git unzip build-essential netbase $BASE_OS_PACKAGES
+RUN curl -fsSL https://github.com/ocaml/opam/releases/download/2.5.0/opam-2.5.0-x86_64-linux -o /usr/local/bin/opam && \
     chmod +x /usr/local/bin/opam && \
-    git config --global --add safe.directory '*'
+    git config --system --add safe.directory '*'
 WORKDIR /root/w
 
 # --- Stage 2: opam-setup (builds the switch, discarded) ---
