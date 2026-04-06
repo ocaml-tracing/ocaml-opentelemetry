@@ -11,17 +11,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - ubuntu-latest
-            #- windows-latest
-            #- macos-latest
-        ocaml-compiler:
-          - 4.08.x
-          - 4.13.x
-          - 5.0.x
-          - 5.3.x
+        include:
+          - ocaml-version: "4.08"
+            container: ghcr.io/ocaml-tracing/ocaml-opentelemetry/ci-4.08:latest
+            eio: false
+          - ocaml-version: "4.14"
+            container: ghcr.io/ocaml-tracing/ocaml-opentelemetry/ci-4.14:latest
+            eio: false
+          - ocaml-version: "5.4"
+            container: ghcr.io/ocaml-tracing/ocaml-opentelemetry/ci-5.4:latest
+            eio: true
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    container: ${{ matrix.container }}
 
     steps:
       - name: Checkout code
@@ -29,47 +31,18 @@ jobs:
         with:
           submodules: recursive
 
-      # needed for depext to work
-      - run: sudo apt-get update && sudo apt-get install mccs
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - name: Build
+        run: opam exec -- dune build @install -p opentelemetry,opentelemetry-client,opentelemetry-lwt,opentelemetry-cohttp-lwt,opentelemetry-client-ocurl,opentelemetry-client-ocurl-lwt,opentelemetry-client-cohttp-lwt,opentelemetry-logs
 
-      - name: Use OCaml ${{ matrix.ocaml-compiler }}
-        uses: ocaml/setup-ocaml@v3
-        with:
-          ocaml-compiler: ${{ matrix.ocaml-compiler }}
-          opam-depext-flags: --with-test
-          dune-cache: true
-          allow-prerelease-opam: true
+      - name: Build eio packages
+        if: ${{ matrix.eio }}
+        run: opam exec -- dune build @install -p opentelemetry-client-cohttp-eio
 
-      - run: |
-          opam install pbrt.4.0 -y
-          opam install ambient-context lwt.5.9.2
+      - name: Lint (protoc check)
+        run: opam exec -- dune build @lint
 
-      # We cannot install packages that need eio on ocaml versions before 5
-      - run: |
-          packages=$(ls ./*.opam | grep -v eio)
-          opam install $packages --deps-only --with-test --solver=mccs
-        if: ${{ ! (startsWith(matrix.ocaml-compiler, '5')) }}
+      - name: Check no generated files changed
+        run: git diff --exit-code
 
-      # We should be able to install all packages on ocaml 5
-      - run: opam install . --deps-only --with-test --solver=mccs
-        if: ${{ startsWith(matrix.ocaml-compiler, '5') }}
-
-      - run: opam exec -- dune build @install -p opentelemetry,opentelemetry-client,opentelemetry-lwt,opentelemetry-client-ocurl,opentelemetry-cohttp-lwt,opentelemetry-client-cohttp-lwt,opentelemetry-logs
-
-      - run: opam install trace
-      - run: opam exec -- dune build @install -p opentelemetry
-
-      - run: opam install lwt.6.1.1 -y
-        if: ${{ matrix.ocaml-compiler == '5.3.x' }}
-      - run: opam exec -- dune build @install -p opentelemetry,opentelemetry-client,opentelemetry-lwt,opentelemetry-client-cohttp-lwt
-        if: ${{ matrix.ocaml-compiler == '5.3.x' }}
-
-      - run: opam install ocaml-protoc
-      - run: opam exec -- dune build @lint
-
-      # check that nothing changed
-      - run: git diff --exit-code
-
-      - run: opam exec -- dune build @runtest
-        if: ${{ matrix.os == 'ubuntu-latest' }}
+      - name: Run tests
+        run: opam exec -- dune build @runtest
