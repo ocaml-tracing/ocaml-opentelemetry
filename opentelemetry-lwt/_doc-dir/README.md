@@ -7,10 +7,10 @@ connectors to talk to opentelemetry software such as [jaeger](https://www.jaeger
 
 - library `opentelemetry` should be used to instrument your code
   and possibly libraries. It doesn't communicate with anything except
-  a backend (default: dummy backend);
-- library `opentelemetry-client-ocurl` is a backend that communicates
+  an exporter (default: no-op);
+- library `opentelemetry-client-ocurl` is an exporter that communicates
   via http+protobuf with some collector (otelcol, datadog-agent, etc.) using cURL bindings;
-- library `opentelemetry-client-cohttp-lwt` is a backend that communicates
+- library `opentelemetry-client-cohttp-lwt` is an exporter that communicates
   via http+protobuf with some collector using cohttp.
 
 ## License
@@ -39,14 +39,14 @@ module Otel = Opentelemetry
 let (let@) = (@@)
 
 let foo () =
-  let@ scope = Otel.Trace.with_  "foo"
+  let@ span = Otel.Tracer.with_ "foo"
       ~attrs:["hello", `String "world"] in
-  do_work();
-  Otel.Metrics.(
-    emit [
-      gauge ~name:"foo.x" [int 42];
-    ]);
-  do_more_work();
+  do_work ();
+  let now = Otel.Clock.now Otel.Meter.default.clock in
+  Otel.Meter.emit1 Otel.Meter.default
+    Otel.Metrics.(gauge ~name:"foo.x" [int ~now 42]);
+  Otel.Span.add_event span (Otel.Event.make "work done");
+  do_more_work ();
   ()
 ```
 
@@ -56,14 +56,14 @@ If you're writing a top-level application, you need to perform some initial conf
 
 1. Set the [`service_name`][];
 2. optionally configure [ambient-context][] with the appropriate storage for your environment — TLS, Lwt, Eio…;
-3. and install a [`Collector`][] (usually by calling your collector's `with_setup` function.)
+3. and install an exporter (usually by calling your client library's `with_setup` function.)
 
 For example, if your application is using Lwt, and you're using `ocurl` as your collector, you might do something like this:
 
 ```ocaml
 let main () =
   Otel.Globals.service_name := "my_service";
-  Otel.GC_metrics.basic_setup();
+  Otel.Gc_metrics.setup ();
 
   Opentelemetry_ambient_context.set_storage_provider (Opentelemetry_ambient_context_lwt.storage ());
   Opentelemetry_client_ocurl.with_setup () @@ fun () ->
@@ -72,33 +72,55 @@ let main () =
   (* … *)
 ```
 
-  [`service_name`]: <https://v3.ocaml.org/p/opentelemetry/0.5/doc/Opentelemetry/Globals/index.html#val-service_name>
-  [`Collector`]: <https://v3.ocaml.org/p/opentelemetry/0.5/doc/Opentelemetry/Collector/index.html>
+  [`service_name`]: <https://v3.ocaml.org/p/opentelemetry/latest/doc/Opentelemetry/Globals/index.html#val-service_name>
   [ambient-context]: now vendored as `opentelemetry.ambient-context`, formerly <https://v3.ocaml.org/p/ambient-context>
+
+## Migration 0.13 → v0.90
+
+see `doc/migration_guide_v0.90.md`
 
 ## Configuration
 
-The library is configurable via `Opentelemetry.Config`, via the standard
-opentelemetry env variables, or with some custom environment variables.
+### Environment Variables
 
-- `OTEL_EXPORTER_OTLP_ENDPOINT` sets the http endpoint to send signals to
-- `OTEL_OCAML_DEBUG=1` to print some debug messages from the opentelemetry library ide
-- `OTEL_RESOURCE_ATTRIBUTES` sets a comma separated list of custom resource attributes
+The library supports standard OpenTelemetry environment variables:
 
-## Collector opentelemetry-client-ocurl
+**General:**
+- `OTEL_SDK_DISABLED` - disable the SDK (default: false)
+- `OTEL_SERVICE_NAME` - service name
+- `OTEL_RESOURCE_ATTRIBUTES` - comma-separated key=value resource attributes
+- `OTEL_OCAML_DEBUG=1` - print debug messages from the opentelemetry library
 
-This is a synchronous collector that uses the http+protobuf format
-to send signals (metrics, traces, logs) to some other collector (eg. `otelcol`
+**Exporter endpoints:**
+- `OTEL_EXPORTER_OTLP_ENDPOINT` - base endpoint (default: http://localhost:4318)
+- `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` - traces endpoint
+- `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` - metrics endpoint
+- `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` - logs endpoint
+
+**Exporter configuration:**
+- `OTEL_EXPORTER_OTLP_PROTOCOL` - protocol: http/protobuf or http/json (default: http/protobuf)
+
+**Headers:**
+- `OTEL_EXPORTER_OTLP_HEADERS` - headers as comma-separated key=value pairs
+- `OTEL_EXPORTER_OTLP_TRACES_HEADERS` - traces-specific headers
+- `OTEL_EXPORTER_OTLP_METRICS_HEADERS` - metrics-specific headers
+- `OTEL_EXPORTER_OTLP_LOGS_HEADERS` - logs-specific headers
+
+
+## opentelemetry-client-ocurl
+
+This is a synchronous exporter that uses the http+protobuf format
+to send signals (metrics, traces, logs) to some collector (eg. `otelcol`
 or the datadog agent).
 
-Do note that this backend uses a thread pool and is incompatible
+Do note that it uses a thread pool and is incompatible
 with uses of `fork` on some Unixy systems.
 See [#68](https://github.com/imandra-ai/ocaml-opentelemetry/issues/68) for a possible workaround.
 
-## Collector opentelemetry-client-cohttp-lwt
+## opentelemetry-client-cohttp-lwt
 
-This is a Lwt-friendly collector that uses cohttp to send
-signals to some other collector (e.g. `otelcol`). It must be run
+This is a Lwt-friendly exporter that uses cohttp to send
+signals to some collector (e.g. `otelcol`). It must be run
 inside a `Lwt_main.run` scope.
 
 ## Opentelemetry-trace

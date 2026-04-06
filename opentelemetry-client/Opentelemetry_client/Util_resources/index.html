@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Util_resources (opentelemetry-client.Opentelemetry_client.Util_resources)</title><meta charset="utf-8"/><link rel="stylesheet" href="../../../_odoc-theme/odoc.css"/><meta name="generator" content="odoc 3.1.0"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../../index.html">Index</a> &#x00BB; <a href="../../index.html">opentelemetry-client</a> &#x00BB; <a href="../index.html">Opentelemetry_client</a> &#x00BB; Util_resources</nav><header class="odoc-preamble"><h1>Module <code><span>Opentelemetry_client.Util_resources</span></code></h1><p>Group signals into <code>resource_xxx</code> objects</p></header><div class="odoc-content"><div class="odoc-spec"><div class="spec value anchored" id="val-make_resource_logs"><a href="#val-make_resource_logs" class="anchor"></a><code><span><span class="keyword">val</span> make_resource_logs : 
+  <span><span class="optlabel">?service_name</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?attrs</span>:
+    <span><span>(string
+     * <span>[&lt; <span>`Bool of bool</span>
+       <span><span>| `Float</span> of float</span>
+       <span><span>| `Int</span> of int</span>
+       <span>| `None</span>
+       <span><span>| `String</span> of string</span> ]</span>)</span>
+      list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../../../opentelemetry/Opentelemetry_proto/Logs/index.html#type-log_record">Opentelemetry_client.Common_.Proto.Logs.log_record</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../../../opentelemetry/Opentelemetry_proto/Logs/index.html#type-resource_logs">Opentelemetry_client.Common_.Proto.Logs.resource_logs</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-make_resource_spans"><a href="#val-make_resource_spans" class="anchor"></a><code><span><span class="keyword">val</span> make_resource_spans : 
+  <span><span class="optlabel">?service_name</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?attrs</span>:
+    <span><span>(string
+     * <span>[&lt; <span>`Bool of bool</span>
+       <span><span>| `Float</span> of float</span>
+       <span><span>| `Int</span> of int</span>
+       <span>| `None</span>
+       <span><span>| `String</span> of string</span> ]</span>)</span>
+      list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../../../opentelemetry/Opentelemetry_proto/Trace/index.html#type-span">Opentelemetry_client.Common_.Proto.Trace.span</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../../../opentelemetry/Opentelemetry_proto/Trace/index.html#type-resource_spans">Opentelemetry_client.Common_.Proto.Trace.resource_spans</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-make_resource_metrics"><a href="#val-make_resource_metrics" class="anchor"></a><code><span><span class="keyword">val</span> make_resource_metrics : 
+  <span><span class="optlabel">?service_name</span>:string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?attrs</span>:
+    <span><span>(string
+     * <span>[&lt; <span>`Bool of bool</span>
+       <span><span>| `Float</span> of float</span>
+       <span><span>| `Int</span> of int</span>
+       <span>| `None</span>
+       <span><span>| `String</span> of string</span> ]</span>)</span>
+      list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><a href="../../../opentelemetry/Opentelemetry_core/Metrics/index.html#type-t">Opentelemetry_client.Common_.OTEL.Metrics.t</a> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../../../opentelemetry/Opentelemetry_proto/Metrics/index.html#type-resource_metrics">Opentelemetry_client.Common_.Proto.Metrics.resource_metrics</a></span></code></div><div class="spec-doc"><p>Aggregate metrics into a <code>Proto.Metrics.resource_metrics</code></p></div></div></div></body></html>
