@@ -1,0 +1,37 @@
+ARG BASE_OS=ubuntu:24.04
+
+# --- Stage 1: base (shared, no OCaml) ---
+FROM $BASE_OS AS base
+ARG BASE_OS_PACKAGES=""
+ENV OPAMROOTISOK=1 OPAMYES=1 OPAMCONFIRMLEVEL=unsafe-yes
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates curl git unzip build-essential $BASE_OS_PACKAGES && \
+    rm -rf /var/lib/apt/lists/* && \
+    curl -fsSL https://github.com/ocaml/opam/releases/download/2.5.0/opam-2.5.0-x86_64-linux -o /usr/local/bin/opam && \
+    chmod +x /usr/local/bin/opam
+WORKDIR /root/w
+
+# --- Stage 2: opam-setup (builds the switch, discarded) ---
+FROM base AS opam-setup
+ARG OCAML_VERSION
+ARG OPAM_REPO_COMMIT=master
+ARG BASE_PACKAGES=""
+
+RUN git init /tmp/opam-repo && cd /tmp/opam-repo && \
+    git remote add origin https://github.com/ocaml/opam-repository.git && \
+    git fetch --depth 1 origin $OPAM_REPO_COMMIT && \
+    git checkout FETCH_HEAD
+
+RUN opam init --disable-sandboxing --bare --no-setup -k local /tmp/opam-repo && \
+    opam switch create /root/w --packages=ocaml-base-compiler.$OCAML_VERSION
+
+RUN opam install --no-depexts $BASE_PACKAGES && \
+    opam clean -a -y && \
+    rm -rf /tmp/opam-repo
+
+# --- Stage 3: final image (base + switch only) ---
+FROM base
+COPY --from=opam-setup /root/.opam /root/.opam
+COPY --from=opam-setup /root/w/_opam /root/w/_opam
+ENV OPAMSWITCH=/root/w PATH=/root/w/_opam/bin:$PATH
+WORKDIR /root/w

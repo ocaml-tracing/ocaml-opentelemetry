@@ -10,13 +10,9 @@ jobs:
   format:
     name: format
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/ocaml-tracing/ocaml-opentelemetry/ci-4.14:latest
-      options: --user root
+    container: ghcr.io/ocaml-tracing/ocaml-opentelemetry/ci-4.14:latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - run: chown -R opam:opam .
-
-      - run: su opam -c "opam exec -- make format-check"
+      - run: opam exec -- make format-check

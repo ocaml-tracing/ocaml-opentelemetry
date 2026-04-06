@@ -1,0 +1,44 @@
+# CI Docker images — included by top-level Makefile
+CI_REGISTRY = ghcr.io/ocaml-tracing/ocaml-opentelemetry
+CI_VERSIONS = 4.08 4.14 5.4
+# To update: curl -s https://api.github.com/repos/ocaml/opam-repository/commits/master | jq -r .sha
+OPAM_REPO_COMMIT ?= 67472cd54293d750a62d6d4423024d55f77268b0
+CI_BASE_OS_PACKAGES = pkg-config libcurl4-openssl-dev libgmp-dev mccs
+
+CI_COMMON_PACKAGES = ptime hmap pbrt pbrt_yojson ambient-context mtime \
+    thread-local-storage lwt_ppx ambient-context-lwt \
+    cohttp cohttp-lwt cohttp-lwt-unix \
+    ezcurl ezcurl-lwt ocurl logs alcotest containers \
+    trace ocaml-protoc
+
+CI_PACKAGES_408 = $(CI_COMMON_PACKAGES) lwt.5.9.2
+CI_PACKAGES_414 = $(CI_COMMON_PACKAGES) lwt.5.9.2 ocamlformat.0.27.0
+CI_PACKAGES_54  = $(CI_COMMON_PACKAGES) lwt.6.1.1 \
+    ambient-context-eio cohttp-eio tls-eio ca-certs mirage-crypto-rng eio_main odig
+
+CI_BUILD = docker build -f deps/dockerfile.ocaml \
+    --build-arg OPAM_REPO_COMMIT=$(OPAM_REPO_COMMIT) \
+    --build-arg "BASE_OS_PACKAGES=$(CI_BASE_OS_PACKAGES)"
+
+build-ci-docker:
+	$(CI_BUILD) --build-arg OCAML_VERSION=4.08.1 --build-arg "BASE_PACKAGES=$(CI_PACKAGES_408)" -t $(CI_REGISTRY)/ci-4.08:latest .
+	$(CI_BUILD) --build-arg OCAML_VERSION=4.14.2 --build-arg "BASE_PACKAGES=$(CI_PACKAGES_414)" -t $(CI_REGISTRY)/ci-4.14:latest .
+	$(CI_BUILD) --build-arg OCAML_VERSION=5.4.1  --build-arg "BASE_PACKAGES=$(CI_PACKAGES_54)"  -t $(CI_REGISTRY)/ci-5.4:latest .
+
+CI_NON_EIO_PACKAGES = opentelemetry,opentelemetry-client,opentelemetry-lwt,opentelemetry-cohttp-lwt,opentelemetry-client-ocurl,opentelemetry-client-ocurl-lwt,opentelemetry-client-cohttp-lwt,opentelemetry-logs
+CI_RUN = docker run --rm -v $(PWD):/root/w -w /root/w
+
+run-ci:
+	@for v in $(CI_VERSIONS); do \
+		echo "=== OCaml $$v ===" ; \
+		$(CI_RUN) $(CI_REGISTRY)/ci-$$v:latest \
+			sh -c "opam exec -- dune build @install -p $(CI_NON_EIO_PACKAGES) && opam exec -- dune build @runtest" \
+		|| exit 1 ; \
+	done
+	$(CI_RUN) $(CI_REGISTRY)/ci-5.4:latest \
+		opam exec -- dune build @install -p opentelemetry-client-cohttp-eio
+
+upload-ci-docker: build-ci-docker
+	@for v in $(CI_VERSIONS); do \
+		docker push $(CI_REGISTRY)/ci-$$v:latest ; \
+	done || ( echo  "to login:  docker login ghcr.io -u <your-github-username>" ; exit 1 )
