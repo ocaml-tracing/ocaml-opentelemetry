@@ -8,23 +8,27 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    container: ghcr.io/ocaml-tracing/ocaml-opentelemetry/ci-5.4:latest
+    container:
+      image: ghcr.io/ocaml-tracing/ocaml-opentelemetry/ci-5.4:latest
+      options: --user root
 
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
+      - run: chown -R opam:opam .
+
       - name: Install local packages
-        run: opam exec -- dune build @install && opam exec -- dune install
+        run: su opam -c "opam exec -- dune build @install && opam exec -- dune install"
 
       - name: Build documentation
         run: |
-          opam exec -- odig odoc --cache-dir=_doc/ \
+          su opam -c "opam exec -- odig odoc --cache-dir=_doc/ \
             opentelemetry opentelemetry-client opentelemetry-lwt \
             opentelemetry-cohttp-lwt opentelemetry-client-ocurl \
             opentelemetry-client-ocurl-lwt opentelemetry-client-cohttp-lwt \
-            opentelemetry-client-cohttp-eio opentelemetry-logs
+            opentelemetry-client-cohttp-eio opentelemetry-logs"
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3

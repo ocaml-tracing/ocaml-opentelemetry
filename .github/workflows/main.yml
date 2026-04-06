@@ -23,7 +23,9 @@ jobs:
             eio: true
 
     runs-on: ubuntu-latest
-    container: ${{ matrix.container }}
+    container:
+      image: ${{ matrix.container }}
+      options: --user root
 
     steps:
       - name: Checkout code
@@ -31,18 +33,20 @@ jobs:
         with:
           submodules: recursive
 
+      - run: chown -R opam:opam .
+
       - name: Build
-        run: opam exec -- dune build @install -p opentelemetry,opentelemetry-client,opentelemetry-lwt,opentelemetry-cohttp-lwt,opentelemetry-client-ocurl,opentelemetry-client-ocurl-lwt,opentelemetry-client-cohttp-lwt,opentelemetry-logs
+        run: su opam -c "opam exec -- dune build @install -p opentelemetry,opentelemetry-client,opentelemetry-lwt,opentelemetry-cohttp-lwt,opentelemetry-client-ocurl,opentelemetry-client-ocurl-lwt,opentelemetry-client-cohttp-lwt,opentelemetry-logs"
 
       - name: Build eio packages
         if: ${{ matrix.eio }}
-        run: opam exec -- dune build @install -p opentelemetry-client-cohttp-eio
+        run: su opam -c "opam exec -- dune build @install -p opentelemetry-client-cohttp-eio"
 
       - name: Lint (protoc check)
-        run: opam exec -- dune build @lint
+        run: su opam -c "opam exec -- dune build @lint"
 
       - name: Check no generated files changed
         run: git diff --exit-code
 
       - name: Run tests
-        run: opam exec -- dune build @runtest
+        run: su opam -c "opam exec -- dune build @runtest"
