@@ -35,7 +35,7 @@ jobs:
 
       - name: Build eio packages
         if: ${{ matrix.eio }}
-        run: opam exec -- dune build @install -p opentelemetry-client-cohttp-eio
+        run: opam exec -- dune build @install -p opentelemetry-client-cohttp-eio,opentelemetry,opentelemetry-client,opentelemetry-lwt,opentelemetry-cohttp-lwt,opentelemetry-client-ocurl,opentelemetry-client-ocurl-lwt,opentelemetry-client-cohttp-lwt,opentelemetry-logs
 
       - name: Lint (protoc check)
         run: opam exec -- dune build @lint
