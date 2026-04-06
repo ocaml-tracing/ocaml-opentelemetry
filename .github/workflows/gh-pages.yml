@@ -1,0 +1,38 @@
+name: github pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+
+      # needed for depext to work
+      - run: sudo apt-get update && sudo apt-get install mccs
+
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: '5.1.x'
+          dune-cache: true
+          allow-prerelease-opam: true
+
+      - run: |
+          opam pin trace https://github.com/ocaml-tracing/ocaml-trace.git#main -y -n
+          opam pin https://github.com/ocaml-tracing/ambient-context.git#main -y -n
+
+      - name: Deps
+        run: opam install odig opentelemetry opentelemetry-client opentelemetry-lwt opentelemetry-cohttp opentelemetry-client-ocurl opentelemetry-client-ocurl-lwt opentelemetry-cohttp-lwt opentelemetry-cohttp-eio
+
+      - name: Build
+        run: opam exec -- odig odoc --cache-dir=_doc/ opentelemetry opentelemetry-client opentelemetry-lwt opentelemetry-cohttp opentelemetry-client-ocurl opentelemetry-client-ocurl-lwt opentelemetry-cohttp-lwt opentelemetry-cohttp-eio
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_doc/html
+          enable_jekyll: false
