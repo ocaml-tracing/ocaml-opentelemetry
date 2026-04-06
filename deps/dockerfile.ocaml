@@ -8,7 +8,8 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates curl git unzip build-essential $BASE_OS_PACKAGES && \
     rm -rf /var/lib/apt/lists/* && \
     curl -fsSL https://github.com/ocaml/opam/releases/download/2.5.0/opam-2.5.0-x86_64-linux -o /usr/local/bin/opam && \
-    chmod +x /usr/local/bin/opam
+    chmod +x /usr/local/bin/opam && \
+    git config --global --add safe.directory '*'
 WORKDIR /root/w
 
 # --- Stage 2: opam-setup (builds the switch, discarded) ---
@@ -33,5 +34,5 @@ RUN opam install --no-depexts $BASE_PACKAGES && \
 FROM base
 COPY --from=opam-setup /root/.opam /root/.opam
 COPY --from=opam-setup /root/w/_opam /root/w/_opam
-ENV OPAMSWITCH=/root/w PATH=/root/w/_opam/bin:$PATH
+ENV OPAMROOT=/root/.opam OPAMSWITCH=/root/w PATH=/root/w/_opam/bin:$PATH
 WORKDIR /root/w
