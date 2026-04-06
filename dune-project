@@ -94,7 +94,7 @@
  (name opentelemetry-client-ocurl)
  (depends
   (ocaml
-   (>= "4.08"))
+   (>= "4.11"))
   (mtime
    (>= "1.4"))
   ; for spans
@@ -106,7 +106,7 @@
   (odoc :with-doc)
   (ezcurl
    (>= 0.2.3))
-  ocurl
+  curl
   (alcotest :with-test)
   (cohttp-lwt-unix :with-test)
   (containers :with-test)
@@ -117,7 +117,7 @@
  (name opentelemetry-client-ocurl-lwt)
  (depends
   (ocaml
-   (>= "4.08"))
+   (>= "4.11"))
   (mtime
    (>= "1.4"))
   (opentelemetry

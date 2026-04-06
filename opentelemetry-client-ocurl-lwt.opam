@@ -9,7 +9,7 @@ homepage: "https://github.com/ocaml-tracing/ocaml-opentelemetry"
 bug-reports: "https://github.com/ocaml-tracing/ocaml-opentelemetry/issues"
 depends: [
   "dune" {>= "3.11"}
-  "ocaml" {>= "4.08"}
+  "ocaml" {>= "4.11"}
   "mtime" {>= "1.4"}
   "opentelemetry" {= version}
   "opentelemetry-client" {= version}
