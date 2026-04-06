@@ -36,6 +36,8 @@ WATCH ?= @all
 watch:
 	@dune build $(WATCH) -w $(OPTS)
 
+include deps/Makefile.ci
+
 VERSION=$(shell awk '/^version:/ {print $$2}' opentelemetry.opam)
 update_next_tag:
 	@echo "update version to $(VERSION)..."

@@ -7,3 +7,4 @@ _opam
 *.install
 *.exe
 *.tmp
+/.env

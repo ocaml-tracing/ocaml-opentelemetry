@@ -1,5 +1,3 @@
-
-
 name: format
 
 on:
@@ -11,20 +9,10 @@ on:
 jobs:
   format:
     name: format
-    strategy:
-      matrix:
-        ocaml-compiler:
-            - '5.3'
-    runs-on: 'ubuntu-latest'
+    runs-on: ubuntu-latest
+    container: ghcr.io/ocaml-tracing/ocaml-opentelemetry/ci-4.14:latest
+
     steps:
-      - uses: actions/checkout@main
-      - name: Use OCaml ${{ matrix.ocaml-compiler }}
-        uses: ocaml/setup-ocaml@v3
-        with:
-          ocaml-compiler: ${{ matrix.ocaml-compiler }}
-          dune-cache: true
-          allow-prerelease-opam: true
+      - uses: actions/checkout@v6
 
-      - run: opam install ocamlformat.0.27.0 lwt.6.1.1
       - run: opam exec -- make format-check
-
