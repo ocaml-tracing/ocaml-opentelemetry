@@ -25,6 +25,11 @@ val logger : logger ref
 val string_of_level : level -> string
 (** String representation of a level. *)
 
+val level_above : min_level:level -> level -> bool
+(** [level_above ~min_level lvl] is true if messages at level [lvl] should be
+    logged.
+    @since NEXT_RELEASE *)
+
 val log : level -> (unit -> string) -> unit
 (** [log level mk_msg] emits a diagnostic message if the current logger is
     active. [mk_msg] is called lazily — only if the message will be emitted. *)
