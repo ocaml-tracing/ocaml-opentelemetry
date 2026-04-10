@@ -101,8 +101,9 @@ let push (self : _ state) x =
       if num_discarded > 0 then (
         ignore (Atomic.fetch_and_add self.n_discarded num_discarded : int);
         Opentelemetry.Self_debug.log Warning (fun () ->
-            Printf.sprintf "otel: dropped %d signals (exporter queue full)"
-              num_discarded)
+            Printf.sprintf
+              "otel: dropped %d signals (exporter queue full at %d)"
+              num_discarded self.high_watermark)
       );
       (* wake up potentially asleep consumers *)
       Cb_set.trigger self.on_non_empty
