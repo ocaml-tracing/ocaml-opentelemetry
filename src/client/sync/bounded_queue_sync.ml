@@ -99,11 +99,12 @@ let push (self : _ state) x =
       ignore (Atomic.fetch_and_add self.n_discarded (List.length x) : int)
     | Pushed { num_discarded } ->
       if num_discarded > 0 then (
-        ignore (Atomic.fetch_and_add self.n_discarded num_discarded : int);
+        let total = Atomic.fetch_and_add self.n_discarded num_discarded in
         Opentelemetry.Self_debug.log Warning (fun () ->
             Printf.sprintf
-              "otel: dropped %d signals (exporter queue full at %d)"
-              num_discarded self.high_watermark)
+              "otel: dropped %d signals (queue full: %d/%d, total dropped: %d)"
+              num_discarded (Q.size self.q) self.high_watermark
+              (total + num_discarded))
       );
       (* wake up potentially asleep consumers *)
       Cb_set.trigger self.on_non_empty
