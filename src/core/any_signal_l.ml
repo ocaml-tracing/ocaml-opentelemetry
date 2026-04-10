@@ -19,6 +19,11 @@ let pp out = function
   | Metrics m -> pp_list Proto.Metrics.pp_metric out m
   | Logs l -> pp_list Proto.Logs.pp_log_record out l
 
+let length = function
+  | Spans l -> List.length l
+  | Metrics l -> List.length l
+  | Logs l -> List.length l
+
 let of_logs_or_empty = function
   | [] -> []
   | l -> [ Logs l ]

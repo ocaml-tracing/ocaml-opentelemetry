@@ -81,6 +81,7 @@ let create_exporter ?(config = Config.make ()) () : OTEL.Exporter.t =
   let consumer = consumer ~config () in
   let bq =
     Opentelemetry_client_sync.Bounded_queue_sync.create
+      ~measure:OTEL.Any_signal_l.length
       ~high_watermark:OTELC.Bounded_queue.Defaults.high_watermark ()
   in
 

@@ -88,7 +88,10 @@ type 'a state = {
   high_watermark: int;
   q: 'a Q.t;
   on_non_empty: Cb_set.t;
+  measure: 'a -> int;
 }
+
+let measure_all_ measure xs = List.fold_left (fun acc x -> acc + measure x) 0 xs
 
 let push (self : _ state) x =
   if x <> [] then (
@@ -96,15 +99,16 @@ let push (self : _ state) x =
       Q.push_while_not_full self.q ~high_watermark:self.high_watermark x
     with
     | Closed ->
-      ignore (Atomic.fetch_and_add self.n_discarded (List.length x) : int)
+      let n = measure_all_ self.measure x in
+      ignore (Atomic.fetch_and_add self.n_discarded n : int)
     | Pushed { num_discarded } ->
       if num_discarded > 0 then (
-        let total = Atomic.fetch_and_add self.n_discarded num_discarded in
+        let n_signals = measure_all_ self.measure x in
+        let total = Atomic.fetch_and_add self.n_discarded n_signals in
         Opentelemetry.Self_debug.log Warning (fun () ->
             Printf.sprintf
               "otel: dropped %d signals (queue full: %d/%d, total dropped: %d)"
-              num_discarded (Q.size self.q) self.high_watermark
-              (total + num_discarded))
+              n_signals (Q.size self.q) self.high_watermark (total + n_signals))
       );
       (* wake up potentially asleep consumers *)
       Cb_set.trigger self.on_non_empty
@@ -131,13 +135,14 @@ let to_bounded_queue (self : 'a state) : 'a BQ.t =
     recv = { try_pop; on_non_empty; common };
   }
 
-let create ~high_watermark () : _ BQ.t =
+let create ?(measure = fun _ -> 1) ~high_watermark () : _ BQ.t =
   let st =
     {
       high_watermark;
       q = Q.create ();
       n_discarded = Atomic.make 0;
       on_non_empty = Cb_set.create ();
+      measure;
     }
   in
   to_bounded_queue st
