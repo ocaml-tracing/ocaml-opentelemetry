@@ -19,7 +19,11 @@ let test_exporter : Otel.Exporter.t =
 let with_test_exporter f =
   (* uncomment for eprintf debugging: *)
   (* let test_exporter = Opentelemetry_client.Exporter_debug.debug test_exporter in*)
-  Otel.Sdk.set test_exporter;
+  Otel.Sdk.set
+    ~traces:(Otel.Provider_config.make ())
+    ~metrics:(Otel.Provider_config.make ())
+    ~logs:(Otel.Provider_config.make ())
+    test_exporter;
   Fun.protect f ~finally:(fun () ->
       let sq = Opentelemetry_client_sync.Sync_queue.create () in
       Otel.Sdk.remove

@@ -54,8 +54,9 @@ let run_tick_callbacks : unit -> unit = Globals.run_tick_callbacks
     from their ticker. *)
 let tick : unit -> unit = Globals.run_tick_callbacks
 
-let set ?(traces = Provider_config.default) ?(metrics = Provider_config.default)
-    ?(logs = Provider_config.default) (exp : Exporter.t) : unit =
+let set ?(traces = Provider_config.make ~batch:400 ())
+    ?(metrics = Provider_config.make ~batch:200 ())
+    ?(logs = Provider_config.make ~batch:400 ()) (exp : Exporter.t) : unit =
   Self_debug.log Info (fun () -> "opentelemetry: SDK set up");
   Atomic.set exporter (Some exp);
   let tracer : Tracer.t =
