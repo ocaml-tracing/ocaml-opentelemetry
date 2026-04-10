@@ -82,7 +82,7 @@ end = struct
       | Error err
         when should_retry err && attempt < self.config.retry_max_attempts ->
         let delay_s = delay_ms /. 1000. in
-        Export_error.report_err ~level:`Debug err;
+        Export_error.report_err ~level:`Warning err;
 
         let* () = sleep_s delay_s in
         let next_delay =

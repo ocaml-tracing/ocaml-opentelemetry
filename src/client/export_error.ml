@@ -12,10 +12,12 @@ let str_to_hex (s : string) : string =
   Opentelemetry_util.Util_bytes_.bytes_to_hex (Bytes.unsafe_of_string s)
 
 (** Report the error on stderr. *)
-let report_err ~level:(provided_level : [ `Debug | `Auto ]) (err : t) : unit =
+let report_err ~level:(provided_level : [ `Debug | `Warning | `Auto ]) (err : t)
+    : unit =
   let compute_level lvl =
     match provided_level with
     | `Debug -> Opentelemetry.Self_debug.Debug
+    | `Warning -> Opentelemetry.Self_debug.Warning
     | `Auto -> lvl
   in
   match err with
