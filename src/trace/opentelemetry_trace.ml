@@ -1,6 +1,9 @@
 open Common_
 
 module Extensions = struct
+  (* extend [Trace]'s types with OTEL specific variants, eg to have a
+     [Trace.span] be a wrapper around [OTEL.Span.t], or to declare custom actions
+     to link spans together, or to be able to use [OTEL]-specific metrics types *)
   type Trace.span += Span_otel of OTEL.Span.t
 
   type Trace.extension_event +=
@@ -21,6 +24,14 @@ end
 
 open Extensions
 
+(* Inject ambient span into [Trace], relying on the [Ambient_context]
+   library. We use the generic ambient context to carry a [Hmap.t] around with
+   possible the current [Trace.span], and it is also used by [OTEL] itself
+   (ambient [OTEL.Span_ctx.t]).
+
+   This mechanism is used by [Trace] so that nested [Trace.with_span] can infer
+   the correct parent-child relation from implicit context, and produce OTEL
+   spans accordingly; without it every span would be parentless. *)
 module Ambient_span_provider_ = struct
   let get_current_span () =
     match OTEL.Ambient_span.get () with
