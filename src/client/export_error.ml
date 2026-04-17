@@ -26,7 +26,7 @@ let report_err ~level:(provided_level : [ `Debug | `Warning | `Auto ]) (err : t)
         "opentelemetry: ctrl-c captured, stopping")
   | `Failure msg ->
     Opentelemetry.Self_debug.log (compute_level Error) (fun () ->
-        Printf.sprintf "opentelemetry: export failed: %s" msg)
+        Printf.sprintf "opentelemetry: export failed:\n%s" msg)
   | `Status
       ( code,
         {
@@ -59,8 +59,9 @@ let decode_invalid_http_response ~attempt_descr ~code ~url (body : string) : t =
     let bt = Printexc.get_backtrace () in
     `Failure
       (Printf.sprintf
-         "httpc: decoding of status (url=%S, code=%d) failed with:\n\
+         "http server at %s returned code %d;\n\
+          trying to decode the body as protobuf failed:\n\
           %s\n\
-          HTTP body: %s\n\
+          raw HTTP body (hex): %s\n\
           %s"
          url code (Printexc.to_string e) (str_to_hex body) bt)
