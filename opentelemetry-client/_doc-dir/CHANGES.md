@@ -1,4 +1,14 @@
 
+## 0.91
+
+- expose Self_debug.level_above
+- config: better defaults in Sdk, have batching enabled by default
+
+- better error message for otlp http failures
+- bounded queue: provide a per-item measure function for better errors/metrics
+- fix: retries are self_debug logged at warning level
+- move from ocurl to curl as a dep
+
 ## 0.90
 
 - major refactor: split library into `opentelemetry.core`, `opentelemetry`,
