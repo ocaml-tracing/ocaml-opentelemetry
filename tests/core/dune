@@ -1,4 +1,4 @@
 (tests
  (names test_trace_context t_size t_histogram test_span_dummy)
  (package opentelemetry)
- (libraries pbrt opentelemetry opentelemetry-client))
+ (libraries pbrt opentelemetry))
