@@ -66,6 +66,7 @@ open struct
     let start_time = OTEL.Clock.now_main () in
     let trace_id, parent_id =
       match parent with
+      | Trace.P_none -> OTEL.Trace_id.create (), None
       | Trace.P_some (Span_otel sp) ->
         OTEL.Span.trace_id sp, Some (OTEL.Span.id sp)
       | _ ->
