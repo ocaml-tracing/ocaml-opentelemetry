@@ -1,18 +1,33 @@
 open struct
-  let rand = Array.init 8 (fun _ -> Random.State.make_self_init ())
+  type cell = {
+    mu: Mutex.t;
+    mutable rand: Random.State.t option;
+  }
 
-  let mutex = Array.init 8 (fun _ -> Mutex.create ())
+  let cells = Array.init 8 (fun _ -> { mu = Mutex.create (); rand = None })
 
   let ( let@ ) = ( @@ )
+
+  let with_shard_rand i (f : Random.State.t -> 'a) : 'a =
+    let cell = Array.get cells (i land 0b111) in
+    let@ () = Util_mutex.protect cell.mu in
+    let rand =
+      match cell.rand with
+      | Some r -> r
+      | None ->
+        let r = Random.State.make_self_init () in
+        cell.rand <- Some r;
+        r
+    in
+    f rand
 end
 
 (** What rand state do we use? *)
-let[@inline] shard () : int = Thread.id (Thread.self ()) land 0b111
+let[@inline] shard () : int = Thread.id (Thread.self ())
 
 let default_rand_bytes_8 () : bytes =
   let shard = shard () in
-  let@ () = Util_mutex.protect mutex.(shard) in
-  let rand = rand.(shard) in
+  let@ rand = with_shard_rand shard in
 
   let b = Bytes.create 8 in
   for i = 0 to 1 do
@@ -30,8 +45,7 @@ let default_rand_bytes_8 () : bytes =
 
 let default_rand_bytes_16 () : bytes =
   let shard = shard () in
-  let@ () = Util_mutex.protect mutex.(shard) in
-  let rand = rand.(shard) in
+  let@ rand = with_shard_rand shard in
 
   let b = Bytes.create 16 in
   for i = 0 to 4 do
