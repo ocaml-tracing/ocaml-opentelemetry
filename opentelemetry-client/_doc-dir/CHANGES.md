@@ -1,3 +1,7 @@
+## 0.91.1
+
+- fix: lazy init of random generators
+- fix: in trace, respect ~parent:P_none
 
 ## 0.91
 
