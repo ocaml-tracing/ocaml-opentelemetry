@@ -7,7 +7,7 @@
 (source
  (github ocaml-tracing/ocaml-opentelemetry))
 
-(version 0.91)
+(version 0.91.1)
 
 (implicit_transitive_deps false)
 
