@@ -1,0 +1,14 @@
+(library
+ (name opentelemetry_import_tef)
+ (public_name opentelemetry.import-tef)
+ (synopsis
+  "Import TEF (Chrome trace event format) traces into OpenTelemetry")
+ (libraries
+  opentelemetry
+  pbrt
+  yojson
+  (select
+   curl_export.ml
+   from
+   (curly result -> curl_export.real.ml)
+   (-> curl_export.dummy.ml))))

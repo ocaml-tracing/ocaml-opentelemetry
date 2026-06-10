@@ -1,0 +1,3 @@
+(executable
+ (name otel_of_tef)
+ (libraries opentelemetry opentelemetry.import-tef yojson))

@@ -39,6 +39,7 @@
    (and
     (>= 4.0)
     (< 5.0)))
+  yojson
   (ambient-context
    (>= 0.2))
   (ocaml-lsp-server :with-dev-setup)
@@ -49,7 +50,7 @@
     (< 0.28)))
   (mtime
    (>= "1.4")))
- (depopts atomic trace thread-local-storage lwt eio picos)
+ (depopts atomic trace thread-local-storage lwt eio picos curly)
  (conflicts
   (trace
    (< 0.12)))
