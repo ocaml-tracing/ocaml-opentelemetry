@@ -83,6 +83,7 @@ let k_trace_id = Trace_id.k_trace_id
 
 module Span_id = Span_id
 module Span_ctx = Span_ctx
+module Trace_state = Trace_state
 
 let k_ambient = Span_ctx.k_ambient
 

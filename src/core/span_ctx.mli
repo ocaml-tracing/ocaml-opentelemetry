@@ -9,6 +9,7 @@ type t
 val make :
   ?remote:bool ->
   ?sampled:bool ->
+  ?trace_state:Trace_state.t ->
   trace_id:Trace_id.t ->
   parent_id:Span_id.t ->
   unit ->
@@ -28,6 +29,8 @@ val trace_id : t -> Trace_id.t
 val parent_id : t -> Span_id.t
 
 val sampled : t -> bool
+
+val trace_state : t -> Trace_state.t
 
 val to_w3c_trace_context : t -> bytes
 

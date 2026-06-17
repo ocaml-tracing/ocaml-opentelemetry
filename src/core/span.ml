@@ -89,8 +89,36 @@ let to_span_link (self : t) : Span_link.t =
          None)
     ~trace_id:self.trace_id ~span_id:self.span_id ()
 
+let[@inline] trace_state (self : t) : Trace_state.t =
+  if span_has_trace_state self then
+    Trace_state.of_w3c_string self.trace_state |> Result.value ~default:[]
+  else
+    []
+
 let[@inline] to_span_ctx (self : t) : Span_ctx.t =
-  Span_ctx.make ~trace_id:(trace_id self) ~parent_id:(id self) ()
+  Span_ctx.make ~trace_id:(trace_id self) ~parent_id:(id self)
+    ~trace_state:(trace_state self) ()
+
+let add_trace_state_attr (self : t) (key : string) (value : string) : unit =
+  if not (Trace_state.is_valid_key key) then
+    invalid_arg (Printf.sprintf "Span.add_trace_state_attr: invalid key %S" key);
+  if not (Trace_state.is_valid_value value) then
+    invalid_arg
+      (Printf.sprintf "Span.add_trace_state_attr: invalid value %S" value);
+  let cur =
+    if span_has_trace_state self then
+      self.trace_state
+    else
+      ""
+  in
+  let entry = key ^ "=" ^ value in
+  let new_ts =
+    if cur = "" then
+      entry
+    else
+      entry ^ "," ^ cur
+  in
+  span_set_trace_state self new_ts
 
 (* Note: a span must not be concurrently modified from multiple
    threads or domains. *)

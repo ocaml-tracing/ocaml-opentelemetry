@@ -87,10 +87,16 @@ end = struct
 
   let set_trace_context (span : Otel.Span.t) req =
     let module Traceparent = Otel.Trace_context.Traceparent in
+    let module Tracestate = Otel.Trace_context.Tracestate in
     let headers =
       Header.add (Request.headers req) header_x_ocaml_otel_traceparent
         (Traceparent.to_value ~trace_id:(Otel.Span.trace_id span)
            ~parent_id:(Otel.Span.id span) ())
+    in
+    let headers =
+      match Otel.Span.trace_state span with
+      | [] -> headers
+      | ts -> Header.add headers Tracestate.name (Tracestate.to_w3c_string ts)
     in
     { req with headers }
 
@@ -106,9 +112,20 @@ end = struct
     | Some v ->
       (match Traceparent.of_value v with
       | Ok (trace_id, parent_id) ->
-        (* TODO: we need a span_ctx here actually *)
+        let trace_state =
+          match from with
+          | `External ->
+            (match
+               Header.get (Request.headers req)
+                 Otel.Trace_context.Tracestate.name
+             with
+            | None -> ""
+            | Some ts -> ts)
+          | `Internal -> ""
+        in
         Some
-          (Otel.Span.make ~trace_id ~id:parent_id ~start_time:0L ~end_time:0L "")
+          (Otel.Span.make ~trace_id ~id:parent_id ~trace_state ~start_time:0L
+             ~end_time:0L "")
       | Error _ -> None)
 
   let remove_trace_context req =
@@ -169,14 +186,20 @@ let client ?(tracer = Otel.Tracer.default) ?(span : Otel.Span.t option)
 
     let add_traceparent (span : Otel.Span.t) headers =
       let module Traceparent = Otel.Trace_context.Traceparent in
+      let module Tracestate = Otel.Trace_context.Tracestate in
       let headers =
         match headers with
         | None -> Header.init ()
         | Some headers -> headers
       in
-      Header.add headers Traceparent.name
-        (Traceparent.to_value ~trace_id:(Otel.Span.trace_id span)
-           ~parent_id:(Otel.Span.id span) ())
+      let headers =
+        Header.add headers Traceparent.name
+          (Traceparent.to_value ~trace_id:(Otel.Span.trace_id span)
+             ~parent_id:(Otel.Span.id span) ())
+      in
+      match Otel.Span.trace_state span with
+      | [] -> headers
+      | ts -> Header.add headers Tracestate.name (Tracestate.to_w3c_string ts)
 
     let call ?ctx ?headers ?body ?chunked meth (uri : Uri.t) :
         (Response.t * Cohttp_lwt.Body.t) Lwt.t =

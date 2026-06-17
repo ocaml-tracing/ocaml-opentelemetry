@@ -32,3 +32,14 @@ module Traceparent = struct
     let span_ctx = Span_ctx.make ?sampled ~trace_id ~parent_id () in
     Bytes.unsafe_to_string @@ Span_ctx.to_w3c_trace_context span_ctx
 end
+
+(** The tracestate header https://www.w3.org/TR/trace-context/#tracestate-header
+*)
+module Tracestate = struct
+  let name = "tracestate"
+
+  let of_w3c_string (s : string) : (Trace_state.t, string) result =
+    Trace_state.of_w3c_string s
+
+  let to_w3c_string (ts : Trace_state.t) : string = Trace_state.to_w3c_string ts
+end

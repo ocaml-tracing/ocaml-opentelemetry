@@ -29,3 +29,18 @@ Trace_context.Traceparent.of_value "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa
 
 Trace_context.Traceparent.to_value trace_id:"4bf92f3577b34da6a3ce929d0e0e4736" parent_id:"00f067aa0ba902b7":
   "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00"
+
+of_w3c_string "" -> Ok "" (len=0)
+of_w3c_string "congo=t61rcwkgmze" -> Ok "congo=t61rcwkgmze" (len=17)
+of_w3c_string "congo=t61rcwkgmze,rojo=00f067aa0ba902b7" -> Ok "congo=t61rcwkgmze,rojo=00f067aa0ba902b7" (len=39)
+of_w3c_string "  vendor=value  " -> Ok "vendor=value" (len=12)
+of_w3c_string "bad key=value" -> Ok "" (len=0)
+of_w3c_string "key=val,=bad,other=fine" -> Ok "key=val,other=fine" (len=18)
+
+set/replace: "vendor=new,other=xyz"
+after delete: "vendor=new"
+get vendor: "new"
+
+Tracestate.name = "tracestate"
+of_w3c_string round-trip: "a=b,c=d"
+of_w3c_string empty: ""
