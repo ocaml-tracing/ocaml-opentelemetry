@@ -24,6 +24,15 @@ struct
     let sleep_s n = Eio.Time.sleep CTX.env#clock n
 
     let spawn f = Eio.Fiber.fork ~sw:CTX.sw f
+
+    (* A daemon fiber does not hold the switch open, so the switch cancels an
+       in-flight inter-tick sleep at teardown instead of waiting it out. The
+       exporter force-flushes on shutdown, so cancelling here can at worst drop
+       a tick that was already mid-send. *)
+    let spawn_daemon f =
+      Eio.Fiber.fork_daemon ~sw:CTX.sw (fun () ->
+          f ();
+          `Stop_daemon)
   end
 
   module Notifier : Generic_notifier.S with module IO = IO = struct

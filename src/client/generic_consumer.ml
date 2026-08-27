@@ -128,10 +128,15 @@ end = struct
       IO.return ()
     | Error err ->
       Atomic.incr n_errors;
-      Export_error.report_err ~level:`Auto err;
-      (* avoid crazy error loop *)
-      let dur_s = Util_net_backoff.on_error backoff in
-      IO.sleep_s (dur_s +. Random.float (dur_s /. 10.))
+      if Atomic.get self.status = Active then (
+        Export_error.report_err ~level:`Auto err;
+        (* avoid crazy error loop *)
+        let dur_s = Util_net_backoff.on_error backoff in
+        IO.sleep_s (dur_s +. Random.float (dur_s /. 10.))
+      ) else
+        (* Shutting down: the backoff would stall process exit, and a failed
+           export during teardown is expected noise, not a real error. *)
+        IO.return ()
 
   let start_worker (self : state) : unit =
     let sender = Sender.create ~config:self.sender_config () in
@@ -184,7 +189,7 @@ end = struct
         );
         loop ()
     in
-    IO.spawn loop
+    IO.spawn_daemon loop
 
   let create_state ~sender_config ~n_workers ~ticker_task ~on_tick ~q () : state
       =
