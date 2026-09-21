@@ -16,7 +16,6 @@ end
 
 module Httpc : Generic_http_consumer.HTTPC with module IO = IO = struct
   module IO = IO
-  open Opentelemetry.Proto
   open Lwt.Syntax
   module Httpc = Cohttp_lwt_unix.Client
 
@@ -68,26 +67,11 @@ module Httpc : Generic_http_consumer.HTTPC with module IO = IO = struct
                       bt))
           in
           Lwt.return r
-      ) else (
-        let dec = Pbrt.Decoder.of_string body in
-
-        let r =
-          try
-            let status = Status.decode_pb_status dec in
-            Error (`Status (code, status, attempt_descr))
-          with e ->
-            let bt = Printexc.get_backtrace () in
-            Error
-              (`Failure
-                 (spf
-                    "httpc: decoding of status (url=%S, code=%d) failed with:\n\
-                     %s\n\
-                     status: %S\n\
-                     %s"
-                    url code (Printexc.to_string e) body bt))
-        in
-        Lwt.return r
-      )
+      ) else
+        Lwt.return
+          (Error
+             (Export_error.decode_invalid_http_response ~attempt_descr ~url
+                ~code body))
 end
 
 module Consumer_impl =

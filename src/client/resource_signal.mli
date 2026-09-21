@@ -16,6 +16,10 @@ type t =
 
 val pp : Format.formatter -> t -> unit
 
+val num_signals : t -> int
+(** Total number of individual signals in this batch.
+    @since NEXT_RELEASE *)
+
 val of_logs :
   ?service_name:string ->
   ?attrs:OTEL.Key_value.t list ->

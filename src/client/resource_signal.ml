@@ -10,12 +10,35 @@ open struct
       []
     else
       [ f ?service_name ?attrs l ]
+
+  let sum_of ~f l = List.fold_left (fun acc x -> acc + f x) 0 l
+
+  let len_scope_logs (s : Proto.Logs.scope_logs) = List.length s.log_records
+
+  let len_resouce_logs (s : Proto.Logs.resource_logs) =
+    sum_of s.scope_logs ~f:len_scope_logs
+
+  let len_scope_spans (s : Proto.Trace.scope_spans) = List.length s.spans
+
+  let len_resource_spans (s : Proto.Trace.resource_spans) =
+    sum_of s.scope_spans ~f:len_scope_spans
+
+  let len_scope_metrics (s : Proto.Metrics.scope_metrics) =
+    List.length s.metrics
+
+  let len_resource_metrics (s : Proto.Metrics.resource_metrics) =
+    sum_of s.scope_metrics ~f:len_scope_metrics
 end
 
 type t =
   | Traces of Proto.Trace.resource_spans list
   | Metrics of Proto.Metrics.resource_metrics list
   | Logs of Proto.Logs.resource_logs list
+
+let num_signals = function
+  | Logs l -> sum_of l ~f:len_resouce_logs
+  | Traces l -> sum_of l ~f:len_resource_spans
+  | Metrics l -> sum_of l ~f:len_resource_metrics
 
 let of_logs ?service_name ?attrs logs : t =
   Logs [ Util_resources.make_resource_logs ?service_name ?attrs logs ]

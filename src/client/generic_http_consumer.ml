@@ -70,11 +70,12 @@ end = struct
       | `Sysbreak -> false (* User interrupt, don't retry *)
 
     (** Retry loop over [f()] with exponential backoff *)
-    let rec retry_loop_ (self : t) attempt delay_ms
+    let rec retry_loop_ (self : t) ~attempt ~additional_descr delay_ms
         ~(f : attempt_descr:string -> unit -> _ result IO.t) : _ result IO.t =
       let open IO in
       let attempt_descr =
-        spf "try(%d/%d)" attempt self.config.retry_max_attempts
+        spf "try(%d/%d) %s" attempt self.config.retry_max_attempts
+          additional_descr
       in
       let* result = f ~attempt_descr () in
       match result with
@@ -89,17 +90,19 @@ end = struct
           min self.config.retry_max_delay_ms
             (delay_ms *. self.config.retry_backoff_multiplier)
         in
-        retry_loop_ self (attempt + 1) next_delay ~f
+        retry_loop_ self ~attempt:(attempt + 1) ~additional_descr next_delay ~f
       | Error _ as err -> return err
 
     let send (self : t) (sigs : OTEL.Any_signal_l.t) : (unit, error) result IO.t
         =
       let res = Resource_signal.of_signal_l sigs in
-      let url, signal_headers =
+      let signal_name, url, signal_headers =
         match res with
-        | Logs _ -> self.config.url_logs, self.config.headers_logs
-        | Traces _ -> self.config.url_traces, self.config.headers_traces
-        | Metrics _ -> self.config.url_metrics, self.config.headers_metrics
+        | Logs _ -> "logs", self.config.url_logs, self.config.headers_logs
+        | Traces _ ->
+          "traces", self.config.url_traces, self.config.headers_traces
+        | Metrics _ ->
+          "metrics", self.config.url_metrics, self.config.headers_metrics
       in
       (* Merge general headers with signal-specific ones (signal-specific takes precedence) *)
       let signal_keys = List.map fst signal_headers in
@@ -118,19 +121,26 @@ end = struct
         :: ("Accept", content_type)
         :: List.rev_append signal_headers filtered_general
       in
-      let data =
+      let data : string =
         Resource_signal.Encode.any ~encoder:self.encoder
           ~protocol:self.config.protocol res
       in
 
+      (* more info about this attempt *)
+      let additional_descr =
+        Printf.sprintf "signal=%S batch=%d body.size=%d" signal_name
+          (Resource_signal.num_signals res)
+          (String.length data)
+      in
       let do_once ~attempt_descr () =
         Httpc.send self.http ~attempt_descr ~url ~headers ~decode:(`Ret ()) data
       in
 
       if self.config.retry_max_attempts > 0 then
-        retry_loop_ self 0 self.config.retry_initial_delay_ms ~f:do_once
+        retry_loop_ self ~attempt:0 ~additional_descr
+          self.config.retry_initial_delay_ms ~f:do_once
       else
-        do_once ~attempt_descr:"single_attempt" ()
+        do_once ~attempt_descr:("single_attempt " ^ additional_descr) ()
   end
 
   module C = Generic_consumer.Make (IO) (Notifier) (Sender)
