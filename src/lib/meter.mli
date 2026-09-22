@@ -3,10 +3,14 @@
     https://opentelemetry.io/docs/specs/otel/metrics/api/#get-a-meter
 
     Instruments ({!Int_counter}, {!Histogram}, …) register themselves into a
-    global list ({!Instrument.all}) on creation and do not require a meter. A
-    {!t} is only needed to wire up periodic collection and emission: call
-    {!add_to_exporter} or {!add_to_main_exporter} once after creating your
-    instruments. *)
+    global list ({!Instrument.all}) on creation and do not require a meter.
+
+    They are collected periodically (every 30s by default, see
+    [Meter_provider.set_min_interval]) and emitted into the global meter
+    provider once an SDK is installed; no further setup is needed.
+
+    [Meter_provider.add_periodic_collection] is useful to manually wire
+    instruments into another meter, e.g. if no SDK was installed. *)
 
 type t = {
   emit: Metrics.t Opentelemetry_emitter.Emitter.t;

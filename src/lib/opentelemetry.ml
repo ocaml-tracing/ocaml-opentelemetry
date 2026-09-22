@@ -136,9 +136,9 @@ module Meter = struct
 
   let default = Meter_provider.default_meter
 
-  let add_to_exporter = Meter_provider.add_to_exporter
+  let set_min_interval = Meter_provider.set_min_interval
 
-  let add_to_main_exporter = Meter_provider.add_to_main_exporter
+  let add_periodic_collection = Meter_provider.add_periodic_collection
 end
 
 (** {2 Logs} *)

@@ -92,7 +92,6 @@ let run () =
           sum ~name:"num-sleep" ~is_monotonic:true
             [ int ~now (Atomic.get num_sleep) ];
         ]);
-  OT.Meter.add_to_main_exporter OT.Meter.default;
 
   let n_jobs = max 1 !n_jobs in
   Printf.printf "run %d job(s)\n%!" n_jobs;

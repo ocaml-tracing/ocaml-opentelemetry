@@ -89,7 +89,6 @@ let run () : unit Lwt.t =
           sum ~name:"num-sleep" ~is_monotonic:true
             [ int ~now (Atomic.get num_sleep) ];
         ]);
-  T.Meter.add_to_main_exporter T.Meter.default;
 
   let n_jobs = max 1 !n_jobs in
   (* Printf.printf "run %d jobs\n%!" n_jobs; *)

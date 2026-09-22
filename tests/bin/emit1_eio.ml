@@ -76,9 +76,7 @@ let run env proc iterations () : unit =
           sum ~name:"num-sleep" ~is_monotonic:true
             [ int ~now (Atomic.get num_sleep) ];
         ]);
-  OT.Meter.add_to_main_exporter
-    ~min_interval:Mtime.Span.(10 * ms)
-    OT.Meter.default;
+  OT.Meter.set_min_interval Mtime.Span.(10 * ms);
 
   let n_jobs = max 1 !n_jobs in
   Printf.printf "run %d jobs in proc %d\n%!" n_jobs proc;

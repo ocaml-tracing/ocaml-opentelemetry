@@ -52,34 +52,57 @@ let[@inline] emit_l (ms : Metrics.t list) : unit = Emitter.emit (get ()).emit ms
 (** A Meter.t that lazily reads the global at emit time *)
 let default_meter : Meter.t = get_meter ()
 
-let minimum_min_interval_ = Mtime.Span.(100 * ms)
+open struct
+  let minimum_min_interval_ = Mtime.Span.(100 * ms)
 
-let default_min_interval_ = Mtime.Span.(4 * s)
+  let default_min_interval_ = Mtime.Span.(30 * s)
 
-let clamp_interval_ interval =
-  if Mtime.Span.compare interval minimum_min_interval_ < 0 then
-    minimum_min_interval_
-  else
-    interval
+  let global_min_interval : Mtime.span Atomic.t =
+    Atomic.make default_min_interval_
 
-let add_to_exporter ?(min_interval = default_min_interval_) (_exp : Exporter.t)
-    (self : Meter.t) : unit =
-  let limiter =
-    Interval_limiter.create ~min_interval:(clamp_interval_ min_interval) ()
-  in
+  let clamp_interval_ interval =
+    if Mtime.Span.compare interval minimum_min_interval_ < 0 then
+      minimum_min_interval_
+    else
+      interval
+end
+
+(** Set the global minimum interval between two periodic collections (default
+    30s), clamped to at least 100ms. Affects the global meter provider and every
+    {!add_periodic_collection} that didn't pass its own [min_interval]. *)
+let set_min_interval (i : Mtime.span) : unit =
+  Atomic.set global_min_interval (clamp_interval_ i)
+
+(** Collect all instruments and callbacks, and emit the result into [m]. Does
+    nothing if [m] is disabled. *)
+let collect_and_emit (m : Meter.t) : unit =
+  if Meter.enabled m then (
+    let metrics = Meter.collect m in
+    if metrics <> [] then Emitter.emit m.emit metrics
+  )
+
+(** [add_periodic_collection meter] registers a tick callback that periodically
+    collects all instruments (see {!Meter.collect}) and emits them into the
+    current value of [meter], if it is enabled.
+
+    The global meter provider is already registered this way, so this is only
+    needed to export metrics to an additional destination.
+
+    @param min_interval
+      minimum interval between collections, read at each tick. Defaults to the
+      global interval, so later calls to {!set_min_interval} apply. A custom
+      atomic is not clamped.
+
+    @since NEXT_RELEASE *)
+let add_periodic_collection ?(min_interval = global_min_interval)
+    (meter : Meter.t Atomic.t) : unit =
+  let limiter = Interval_limiter.create_atomic ~min_interval () in
   Globals.add_on_tick_callback (fun () ->
-      if Interval_limiter.make_attempt limiter then (
-        let metrics = Meter.collect self in
-        if metrics <> [] then Emitter.emit self.emit metrics
-      ))
+      let m = Atomic.get meter in
+      (* check [enabled] first so that we don't consume the interval
+         while disabled *)
+      if Meter.enabled m && Interval_limiter.make_attempt limiter then
+        collect_and_emit m)
 
-let add_to_main_exporter ?(min_interval = default_min_interval_)
-    (self : Meter.t) : unit =
-  let limiter =
-    Interval_limiter.create ~min_interval:(clamp_interval_ min_interval) ()
-  in
-  Globals.add_on_tick_callback (fun () ->
-      if Interval_limiter.make_attempt limiter then (
-        let metrics = Meter.collect self in
-        if metrics <> [] then Emitter.emit self.emit metrics
-      ))
+(* the global provider is always collected periodically *)
+let () = add_periodic_collection ~min_interval:global_min_interval provider_

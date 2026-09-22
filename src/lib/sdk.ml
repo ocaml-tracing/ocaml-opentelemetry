@@ -17,6 +17,8 @@ let self_debug_to_stderr = Self_debug.to_stderr
 *)
 let remove ~on_done () : unit =
   Self_debug.log Info (fun () -> "opentelemetry: SDK removed");
+  (* final collection of metrics, so short-lived programs still export them *)
+  Meter_provider.collect_and_emit (Meter_provider.get ());
   (* flush+close provider emitters so buffered signals reach the queue *)
   Emitter.flush_and_close (Trace_provider.get ()).emit;
   Emitter.flush_and_close (Meter_provider.get ()).emit;
