@@ -5,7 +5,7 @@ open struct
 
   let[@inline] word_to_bytes_f n = n *. float bytes_per_word
 
-  let default_interval_s = 20
+  let default_interval_s = 30
 end
 
 let get_metrics () : Metrics.t list =
