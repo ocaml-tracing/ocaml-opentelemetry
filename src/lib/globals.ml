@@ -114,10 +114,12 @@ let mk_attributes ?(service_name = !service_name) ?(attrs = []) () : _ list =
   in
   l |> merge_global_attributes_
 
+open struct
+  let tick_cbs_ : (unit -> unit) Alist.t = Alist.make ()
+end
+
 (** Global tick callback registry. Callbacks are run periodically by the SDK
     ticker. Other modules register here to avoid depending on {!Sdk}. *)
-let tick_cbs_ : (unit -> unit) Alist.t = Alist.make ()
-
 let add_on_tick_callback (f : unit -> unit) : unit = Alist.add tick_cbs_ f
 
 let run_tick_callbacks () : unit =
