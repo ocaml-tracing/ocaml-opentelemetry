@@ -52,8 +52,11 @@ module Tracestate = struct
       String.split_on_char ',' s |> List.map String.trim
       |> List.filter (fun m -> m <> "")
 
+    let[@inline] has_ot (m : string) : bool =
+      String.length m >= 3 && m.[0] = 'o' && m.[1] = 't' && m.[2] = '='
+
     let ot_value (m : string) : string option =
-      if String.length m >= 3 && String.sub m 0 3 = "ot=" then
+      if has_ot m then
         Some (String.sub m 3 (String.length m - 3))
       else
         None
@@ -100,7 +103,18 @@ module Tracestate = struct
         String.split_on_char ';' v
         |> List.filter (fun kv -> kv <> "" && not (is_th kv))
     in
-    let others = List.filter (fun m -> ot_value m = None) ms in
+    let others =
+      if List.exists has_ot ms then
+        List.filter (fun m -> not (has_ot m)) ms
+      else
+        ms
+    in
+    let others =
+      if List.length others > 31 then
+        List.filteri (fun i _ -> i < 31) others
+      else
+        others
+    in
     String.concat "," (("ot=" ^ String.concat ";" (th :: ot_rest)) :: others)
 end
 
