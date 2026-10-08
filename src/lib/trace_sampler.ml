@@ -45,6 +45,7 @@ let of_env () : t =
   | Some "always_off" -> Always_off
   | Some "traceidratio" -> Trace_id_ratio (ratio ())
   | Some "parentbased_always_on" -> Parent_based Always_on
+  | Some "parentbased_always_off" -> Parent_based Always_off
   | Some "parentbased_traceidratio" -> Parent_based (Trace_id_ratio (ratio ()))
   | Some s ->
     Self_debug.log Warning (fun () ->

@@ -35,7 +35,7 @@ val default : t
 
 val of_env : unit -> t
 (** From [OTEL_TRACES_SAMPLER] (always_on, always_off, traceidratio,
-    parentbased_always_on, parentbased_traceidratio) and
+    parentbased_always_on, parentbased_always_off, parentbased_traceidratio) and
     [OTEL_TRACES_SAMPLER_ARG] (ratio, default 1.0). {!default} if unset or
     unknown. *)
 
