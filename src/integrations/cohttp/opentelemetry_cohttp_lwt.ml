@@ -130,6 +130,9 @@ let client ?(tracer = Otel.Tracer.default) ?(span : Otel.Span.t option)
         | None -> Header.init ()
         | Some headers -> headers
       in
+      let headers =
+        Header.remove (Header.remove headers "traceparent") "tracestate"
+      in
       Header.add_list headers
         (Otel.Trace_context.headers_of_span_ctx (Otel.Span.to_span_ctx span))
 
