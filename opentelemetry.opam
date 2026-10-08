@@ -11,7 +11,7 @@ homepage: "https://github.com/ocaml-tracing/ocaml-opentelemetry"
 bug-reports: "https://github.com/ocaml-tracing/ocaml-opentelemetry/issues"
 depends: [
   "dune" {>= "3.11"}
-  "ocaml" {>= "4.08"}
+  "ocaml" {>= "4.14"}
   "ptime"
   "hmap"
   "odoc" {with-doc}
