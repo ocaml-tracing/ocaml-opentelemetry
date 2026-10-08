@@ -95,6 +95,15 @@ let () =
     (fun (k, v) -> Format.printf "header %s: %s@." k v)
     (Trace_context.headers_of_span_ctx ctx)
 
+let () =
+  let module T = Trace_context.Tracestate in
+  let others = List.init 32 (fun i -> Printf.sprintf "vendor%d=value" i) in
+  let update s = String.split_on_char ',' (T.set_ot_th s 0L) in
+  let result = update (String.concat "," others) in
+  assert (result = "ot=th:0" :: List.filteri (fun i _ -> i < 31) others);
+  let result = update (String.concat "," (others @ [ "ot=rv:1" ])) in
+  assert (result = "ot=th:0;rv:1" :: List.filteri (fun i _ -> i < 31) others)
+
 let () = print_endline ""
 
 let test_to_value trace_id parent_id =

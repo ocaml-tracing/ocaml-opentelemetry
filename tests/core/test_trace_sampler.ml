@@ -64,6 +64,14 @@ let () =
     samplers
 
 let () =
+  let sampler = S.parent_based S.always_off in
+  assert (not (fst (S.decide sampler ~parent:No_parent ~trace_state:"" tid_hi)));
+  assert (fst (S.decide sampler ~parent:Parent_sampled ~trace_state:"" tid_hi));
+  assert (
+    not
+      (fst (S.decide sampler ~parent:Parent_not_sampled ~trace_state:"" tid_hi)))
+
+let () =
   print_endline "";
   Format.printf "of_env (unset) = %a@." S.pp (S.of_env ());
   List.iter
@@ -78,6 +86,7 @@ let () =
       "traceidratio", "nope";
       "traceidratio", "2";
       "parentbased_always_on", "";
+      "parentbased_always_off", "";
       "parentbased_traceidratio", "0.001";
       "bogus", "";
     ]
