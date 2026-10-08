@@ -36,10 +36,10 @@ let global_attributes : key_value list ref =
   in
   ref
   @@
-  try
-    Sys.getenv "OTEL_RESOURCE_ATTRIBUTES"
-    |> String.split_on_char ',' |> List.map parse_pair
-  with _ -> []
+    try
+      Sys.getenv "OTEL_RESOURCE_ATTRIBUTES"
+      |> String.split_on_char ',' |> List.map parse_pair
+    with _ -> []
 
 (** Add a global attribute *)
 let add_global_attribute (key : string) (v : Value.t) : unit =
