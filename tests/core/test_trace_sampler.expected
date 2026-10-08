@@ -1,0 +1,70 @@
+threshold_of_ratio 0 = 0x100000000000000 ("-")
+threshold_of_ratio 0.001 = 0xffbe76c8b43958 ("ot=th:ffbe76c8b43958")
+threshold_of_ratio 0.01 = 0xfd70a3d70a3d70 ("ot=th:fd70a3d70a3d7")
+threshold_of_ratio 0.5 = 0x80000000000000 ("ot=th:8")
+threshold_of_ratio 1 = 0x00000000000000 ("ot=th:0")
+
+randomness 4bf92f3577b34da6a3ce929d0e0e4736 = 0xce929d0e0e4736
+randomness 00000000000000000000000000000001 = 0x00000000000001
+randomness ffffffffffffffffffffffffffffffff = 0xffffffffffffff
+
+decide always_on none lo = true "ot=th:0"
+decide always_on none hi = true "ot=th:0"
+decide always_on none+ts lo = true "ot=th:0,v=1"
+decide always_on none+ts hi = true "ot=th:0,v=1"
+decide always_on sampled lo = true "ot=th:0,v=1"
+decide always_on sampled hi = true "ot=th:0,v=1"
+decide always_on not_sampled lo = true "ot=th:0,v=1"
+decide always_on not_sampled hi = true "ot=th:0,v=1"
+decide always_on not_sampled+th lo = true "ot=th:0,v=1"
+decide always_on not_sampled+th hi = true "ot=th:0,v=1"
+decide always_off none lo = false ""
+decide always_off none hi = false ""
+decide always_off none+ts lo = false "v=1"
+decide always_off none+ts hi = false "v=1"
+decide always_off sampled lo = false "v=1"
+decide always_off sampled hi = false "v=1"
+decide always_off not_sampled lo = false "v=1"
+decide always_off not_sampled hi = false "v=1"
+decide always_off not_sampled+th lo = false "ot=th:8,v=1"
+decide always_off not_sampled+th hi = false "ot=th:8,v=1"
+decide traceidratio(0.5) none lo = false ""
+decide traceidratio(0.5) none hi = true "ot=th:8"
+decide traceidratio(0.5) none+ts lo = false "v=1"
+decide traceidratio(0.5) none+ts hi = true "ot=th:8,v=1"
+decide traceidratio(0.5) sampled lo = false "v=1"
+decide traceidratio(0.5) sampled hi = true "ot=th:8,v=1"
+decide traceidratio(0.5) not_sampled lo = false "v=1"
+decide traceidratio(0.5) not_sampled hi = true "ot=th:8,v=1"
+decide traceidratio(0.5) not_sampled+th lo = false "ot=th:8,v=1"
+decide traceidratio(0.5) not_sampled+th hi = true "ot=th:8,v=1"
+decide parentbased(always_on) none lo = true "ot=th:0"
+decide parentbased(always_on) none hi = true "ot=th:0"
+decide parentbased(always_on) none+ts lo = true "ot=th:0,v=1"
+decide parentbased(always_on) none+ts hi = true "ot=th:0,v=1"
+decide parentbased(always_on) sampled lo = true "v=1"
+decide parentbased(always_on) sampled hi = true "v=1"
+decide parentbased(always_on) not_sampled lo = false "v=1"
+decide parentbased(always_on) not_sampled hi = false "v=1"
+decide parentbased(always_on) not_sampled+th lo = false "ot=th:8,v=1"
+decide parentbased(always_on) not_sampled+th hi = false "ot=th:8,v=1"
+decide parentbased(traceidratio(0.5)) none lo = false ""
+decide parentbased(traceidratio(0.5)) none hi = true "ot=th:8"
+decide parentbased(traceidratio(0.5)) none+ts lo = false "v=1"
+decide parentbased(traceidratio(0.5)) none+ts hi = true "ot=th:8,v=1"
+decide parentbased(traceidratio(0.5)) sampled lo = true "v=1"
+decide parentbased(traceidratio(0.5)) sampled hi = true "v=1"
+decide parentbased(traceidratio(0.5)) not_sampled lo = false "v=1"
+decide parentbased(traceidratio(0.5)) not_sampled hi = false "v=1"
+decide parentbased(traceidratio(0.5)) not_sampled+th lo = false "ot=th:8,v=1"
+decide parentbased(traceidratio(0.5)) not_sampled+th hi = false "ot=th:8,v=1"
+
+of_env (unset) = parentbased(always_on)
+of_env "always_on" "" = always_on
+of_env "always_off" "" = always_off
+of_env "traceidratio" "0.25" = traceidratio(0.25)
+of_env "traceidratio" "nope" = traceidratio(1)
+of_env "traceidratio" "2" = traceidratio(1)
+of_env "parentbased_always_on" "" = parentbased(always_on)
+of_env "parentbased_traceidratio" "0.001" = parentbased(traceidratio(0.001))
+of_env "bogus" "" = parentbased(always_on)

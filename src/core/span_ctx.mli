@@ -9,10 +9,12 @@ type t
 val make :
   ?remote:bool ->
   ?sampled:bool ->
+  ?trace_state:string ->
   trace_id:Trace_id.t ->
   parent_id:Span_id.t ->
   unit ->
   t
+(** @param trace_state W3C [tracestate] value, since NEXT_RELEASE *)
 
 val dummy : t
 (** Invalid span context, to be used as a placeholder *)
@@ -28,6 +30,10 @@ val trace_id : t -> Trace_id.t
 val parent_id : t -> Span_id.t
 
 val sampled : t -> bool
+
+val trace_state : t -> string
+(** W3C [tracestate] value, [""] if absent.
+    @since NEXT_RELEASE *)
 
 val to_w3c_trace_context : t -> bytes
 

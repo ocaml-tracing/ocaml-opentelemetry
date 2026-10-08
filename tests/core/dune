@@ -1,4 +1,18 @@
 (tests
- (names test_trace_context t_size t_histogram test_span_dummy)
+ (names
+  test_trace_context
+  t_size
+  t_histogram
+  test_span_dummy
+  test_trace_sampler)
  (package opentelemetry)
- (libraries pbrt opentelemetry))
+ (modules :standard \ test_tracestate_hegel)
+ (libraries pbrt unix opentelemetry))
+
+(test
+ (name test_tracestate_hegel)
+ (modules test_tracestate_hegel)
+ (package opentelemetry)
+ (enabled_if
+  (>= %{ocaml_version} 5.1))
+ (libraries hegel opentelemetry))

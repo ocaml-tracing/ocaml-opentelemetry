@@ -92,7 +92,7 @@ let create_backend = create_exporter
 let setup_ ~config () : OTEL.Exporter.t =
   let exporter = create_exporter ~config () in
   OTEL.Sdk.set ~traces:config.common.traces ~metrics:config.common.metrics
-    ~logs:config.common.logs exporter;
+    ~logs:config.common.logs ?sampler:config.common.sampler exporter;
 
   Option.iter
     (fun min_level -> OTEL.Self_debug.to_stderr ~min_level ())

@@ -26,6 +26,7 @@ val pp : Format.formatter -> t -> unit
 
 val make :
   ?kind:kind ->
+  ?sampled:bool ->
   ?trace_state:string ->
   ?attrs:key_value list ->
   ?events:Event.t list ->
@@ -40,6 +41,7 @@ val make :
   t
 (** [make ~trace_id ~id name] creates a new span
     @param trace_id the trace this belongs to
+    @param sampled W3C sampled flag (default [true]), since NEXT_RELEASE
     @param parent parent span, if any
     @param links
       list of links to other spans, each with their trace state (see
@@ -49,13 +51,26 @@ val id : t -> Span_id.t
 
 val trace_id : t -> Trace_id.t
 
-val is_not_dummy : t -> bool
+(**/**)
+
+val is_not_dummy : t -> bool [@@alert expert "you probably want is_recording"]
+
+(**/**)
+
+val sampled : t -> bool
+(** W3C sampled flag. Spans without flags count as sampled.
+    @since NEXT_RELEASE *)
+
+val is_recording : t -> bool
+(** Not dummy and sampled. Mutators are no-ops otherwise.
+    @since NEXT_RELEASE *)
 
 val dummy : t
 (** Dummy span, will not record anything *)
 
 val create_new :
   ?kind:kind ->
+  ?sampled:bool ->
   ?id:Span_id.t ->
   ?trace_state:string ->
   ?attrs:key_value list ->

@@ -114,6 +114,9 @@ module Span_kind = Span_kind
 module Span = Span
 module Ambient_span = Ambient_span
 
+module Trace_sampler = Trace_sampler
+(** @since NEXT_RELEASE *)
+
 module Tracer = struct
   include Tracer
 

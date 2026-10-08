@@ -31,6 +31,10 @@
   hmap
   (odoc :with-doc)
   (alcotest :with-test)
+  (hegel
+   (and
+    :with-test
+    (>= 0.25.0)))
   (pbrt
    (and
     (>= 4.0)

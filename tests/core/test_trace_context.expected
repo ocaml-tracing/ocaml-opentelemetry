@@ -17,15 +17,35 @@ Trace_context.Traceparent.of_value "00-0123456789abcdef0123456789abcdef-01234567
 Trace_context.Traceparent.of_value "00-0123456789abcdef0123456789abcdef-0123456789abcdef-":
   Error "trace context must be 55 bytes"
 Trace_context.Traceparent.of_value "00-0123456789abcdef0123456789abcdef-0123456789abcdef-00":
-  Ok trace_id:"0123456789abcdef0123456789abcdef" parent_id:"0123456789abcdef"
+  Ok trace_id:"0123456789abcdef0123456789abcdef" parent_id:"0123456789abcdef" sampled:false remote:true trace_state:""
 Trace_context.Traceparent.of_value "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01":
-  Ok trace_id:"4bf92f3577b34da6a3ce929d0e0e4736" parent_id:"00f067aa0ba902b7"
+  Ok trace_id:"4bf92f3577b34da6a3ce929d0e0e4736" parent_id:"00f067aa0ba902b7" sampled:true remote:true trace_state:""
 Trace_context.Traceparent.of_value "03-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01":
   Error "version is 3, expected 0"
 Trace_context.Traceparent.of_value "00-ohnonohex7b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01":
   Error "in trace id: invalid hex char: 'o'"
 Trace_context.Traceparent.of_value "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aazzzzzzb7-01":
   Error "in span id: invalid hex char: 'z'"
+Trace_context.Traceparent.of_value "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00":
+  Ok trace_id:"4bf92f3577b34da6a3ce929d0e0e4736" parent_id:"00f067aa0ba902b7" sampled:false remote:true trace_state:"ot=th:8,vendor1=t61rcWkgMzE"
+Trace_context.Traceparent.of_value "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01":
+  Ok trace_id:"4bf92f3577b34da6a3ce929d0e0e4736" parent_id:"00f067aa0ba902b7" sampled:true remote:true trace_state:"ot=th:8,vendor1=t61rcWkgMzE"
+Trace_context.Traceparent.of_value "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-03":
+  Ok trace_id:"4bf92f3577b34da6a3ce929d0e0e4736" parent_id:"00f067aa0ba902b7" sampled:true remote:true trace_state:"ot=th:8,vendor1=t61rcWkgMzE"
+
+get_ot_th "" = None
+get_ot_th "vendor1=t61rcWkgMzE" = None
+get_ot_th "ot=th:8" = Some 0x80000000000000
+get_ot_th "vendor1=t61rcWkgMzE, ot=rv:1234;th:fd7" = Some 0xfd700000000000
+get_ot_th "ot=th:0" = Some 0x00000000000000
+get_ot_th "ot=th:123456789abcdef" = None
+get_ot_th "ot=th:xyz" = None
+set_ot_th "" 0x00000000000000 = "ot=th:0" -> Some 0x00000000000000
+set_ot_th "" 0x80000000000000 = "ot=th:8" -> Some 0x80000000000000
+set_ot_th "vendor1=t61rcWkgMzE,vendor2=00f067aa0ba902b7" 0xfd70a3d70a3d71 = "ot=th:fd70a3d70a3d71,vendor1=t61rcWkgMzE,vendor2=00f067aa0ba902b7" -> Some 0xfd70a3d70a3d71
+set_ot_th "vendor1=t61rcWkgMzE, ot=rv:1234;th:8 ,vendor2=1" 0x40000000000000 = "ot=th:4;rv:1234,vendor1=t61rcWkgMzE,vendor2=1" -> Some 0x40000000000000
+header traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
+header tracestate: ot=th:8
 
 Trace_context.Traceparent.to_value trace_id:"4bf92f3577b34da6a3ce929d0e0e4736" parent_id:"00f067aa0ba902b7":
   "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00"

@@ -43,24 +43,13 @@ module Server : sig
     Request.t ->
     (Request.t -> 'a Lwt.t) ->
     'a Lwt.t
-  (** Trace a new internal span.
+  [@@deprecated "use Opentelemetry_lwt.Tracer.with_"]
+  (** Trace a new internal span, parented to the ambient span. [req] is passed
+      through unchanged. *)
 
-      Identical to [Opentelemetry_lwt.Trace.with_], but fetches/stores the trace
-      scope in the [x-ocaml-otel-traceparent] header in the request for
-      convenience. *)
-
-  val get_trace_context :
-    ?from:[ `Internal | `External ] -> Request.t -> Otel.Span.t option
-  (** Get the tracing scope from the custom [x-ocaml-otel-traceparent] header
-      added by [trace] and [with_]. *)
-
-  val set_trace_context : Otel.Span.t -> Request.t -> Request.t
-  (** Set the tracing scope in the custom [x-ocaml-otel-traceparent] header used
-      by [trace] and [with_]. *)
-
-  val remove_trace_context : Request.t -> Request.t
-  (** Strip the custom [x-ocaml-otel-traceparent] header added by [trace] and
-      [with_]. *)
+  val get_trace_context : Request.t -> Otel.Span_ctx.t option
+  (** Remote span context from the W3C [traceparent] and [tracestate] headers.
+      @since NEXT_RELEASE returns a {!Otel.Span_ctx.t}, no [?from] *)
 end = struct
   let attrs_of_request (req : Request.t) =
     let meth = req |> Request.meth |> Code.string_of_method in
@@ -83,50 +72,22 @@ end = struct
         | Some r -> [ "http.request.header.referer", `String r ]);
       ]
 
-  let header_x_ocaml_otel_traceparent = "x-ocaml-otel-traceparent"
-
-  let set_trace_context (span : Otel.Span.t) req =
-    let module Traceparent = Otel.Trace_context.Traceparent in
-    let headers =
-      Header.add (Request.headers req) header_x_ocaml_otel_traceparent
-        (Traceparent.to_value ~trace_id:(Otel.Span.trace_id span)
-           ~parent_id:(Otel.Span.id span) ())
-    in
-    { req with headers }
-
-  let get_trace_context ?(from = `Internal) req : Otel.Span.t option =
-    let module Traceparent = Otel.Trace_context.Traceparent in
-    let name =
-      match from with
-      | `Internal -> header_x_ocaml_otel_traceparent
-      | `External -> Traceparent.name
-    in
-    match Header.get (Request.headers req) name with
+  let get_trace_context req : Otel.Span_ctx.t option =
+    let open Otel.Trace_context in
+    let headers = Request.headers req in
+    match Header.get headers Traceparent.name with
     | None -> None
     | Some v ->
-      (match Traceparent.of_value v with
-      | Ok (trace_id, parent_id) ->
-        (* TODO: we need a span_ctx here actually *)
-        Some
-          (Otel.Span.make ~trace_id ~id:parent_id ~start_time:0L ~end_time:0L "")
-      | Error _ -> None)
-
-  let remove_trace_context req =
-    let headers =
-      Header.remove (Request.headers req) header_x_ocaml_otel_traceparent
-    in
-    { req with headers }
+      let trace_state = Header.get headers Tracestate.name in
+      Result.to_option (Traceparent.of_value ?trace_state v)
 
   let trace ?(tracer = Otel.Tracer.default) ?(attrs = []) callback conn req body
       =
-    let parent = get_trace_context ~from:`External req in
-    Otel_lwt.Tracer.with_ ~tracer "request" ~kind:Span_kind_server
-      ?trace_id:(Option.map Otel.Span.trace_id parent)
-      ?parent
+    let parent_ctx = get_trace_context req in
+    Otel_lwt.Tracer.with_ ~tracer "request" ~kind:Span_kind_server ?parent_ctx
       ~attrs:(attrs @ attrs_of_request req)
       (fun span ->
         let open Lwt.Syntax in
-        let req = set_trace_context span req in
         let* res, body = callback conn req body in
         Otel.Span.add_attrs span (attrs_of_response res);
         Lwt.return (res, body))
@@ -134,12 +95,8 @@ end = struct
   let with_ ?(tracer = Otel.Tracer.default) ?trace_state ?attrs
       ?(kind = Otel.Span.Span_kind_internal) ?links name req
       (f : Request.t -> 'a Lwt.t) =
-    let span = get_trace_context ~from:`Internal req in
-    Otel_lwt.Tracer.with_ ~tracer ?trace_state ?attrs ~kind
-      ?trace_id:(Option.map Otel.Span.trace_id span) ?parent:span ?links name
-      (fun span ->
-        let req = set_trace_context span req in
-        f req)
+    Otel_lwt.Tracer.with_ ~tracer ?trace_state ?attrs ~kind ?links name
+      (fun _ -> f req)
 end
 
 let client ?(tracer = Otel.Tracer.default) ?(span : Otel.Span.t option)
@@ -168,15 +125,13 @@ let client ?(tracer = Otel.Tracer.default) ?(span : Otel.Span.t option)
       trace_id, parent, attrs
 
     let add_traceparent (span : Otel.Span.t) headers =
-      let module Traceparent = Otel.Trace_context.Traceparent in
       let headers =
         match headers with
         | None -> Header.init ()
         | Some headers -> headers
       in
-      Header.add headers Traceparent.name
-        (Traceparent.to_value ~trace_id:(Otel.Span.trace_id span)
-           ~parent_id:(Otel.Span.id span) ())
+      Header.add_list headers
+        (Otel.Trace_context.headers_of_span_ctx (Otel.Span.to_span_ctx span))
 
     let call ?ctx ?headers ?body ?chunked meth (uri : Uri.t) :
         (Response.t * Cohttp_lwt.Body.t) Lwt.t =
