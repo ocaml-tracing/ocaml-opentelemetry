@@ -45,8 +45,7 @@
   (ocamlformat
    (and
     :with-dev-setup
-    (>= 0.27)
-    (< 0.28)))
+    (= 0.28.1)))
   (mtime
    (>= "1.4")))
  (depopts atomic trace thread-local-storage lwt eio picos)
