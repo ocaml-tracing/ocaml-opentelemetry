@@ -72,7 +72,8 @@ open struct
     in
     let trace_id, parent_id, sp_parent, trace_state =
       match parent with
-      | Trace.P_none -> OTEL.Trace_id.create (), None, No_parent, ""
+      | Trace.P_none ->
+        OTEL.Trace_id.create (), None, OTEL.Trace_sampler.No_parent, ""
       | Trace.P_some (Span_otel sp) ->
         ( OTEL.Span.trace_id sp,
           Some (OTEL.Span.id sp),
