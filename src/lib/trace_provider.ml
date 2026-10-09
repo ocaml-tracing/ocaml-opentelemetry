@@ -68,13 +68,22 @@ let with_thunk_and_finally (self : Tracer.t) ?(force_new_trace_id = false)
     | Some _ -> None
     | None -> parent_ctx
   in
-  let trace_id =
-    match trace_id, parent, parent_ctx with
-    | _ when force_new_trace_id -> Trace_id.create ()
-    | Some trace_id, _, _ -> trace_id
-    | None, Some p, _ -> Span.trace_id p
-    | None, None, Some c -> Span_ctx.trace_id c
-    | None, None, None -> Trace_id.create ()
+  let parent_trace =
+    match parent, parent_ctx with
+    | Some p, _ -> Some (Span.trace_id p, Span.trace_flags p)
+    | None, Some c -> Some (Span_ctx.trace_id c, Span_ctx.trace_flags c)
+    | None, None -> None
+  in
+  (* [random]: W3C random-trace-id flag. Set for trace IDs we generate, and
+     propagated unchanged for a parent's trace ID. *)
+  let trace_id, random =
+    match trace_id, parent_trace with
+    | _ when force_new_trace_id -> Trace_id.create (), true
+    | None, Some (tid, flags) -> tid, Trace_flags.is_random flags
+    | Some tid, Some (p_tid, flags) when Trace_id.compare tid p_tid = 0 ->
+      tid, Trace_flags.is_random flags
+    | Some tid, _ -> tid, false (* unknown provenance *)
+    | None, None -> Trace_id.create (), true
   in
   let start_time = Clock.now self.clock in
   let span_id = Span_id.create () in
@@ -109,8 +118,9 @@ let with_thunk_and_finally (self : Tracer.t) ?(force_new_trace_id = false)
   in
 
   let span : Span.t =
-    Span.make ~sampled ?trace_state ?kind ?parent:parent_id ~trace_id
-      ~id:span_id
+    Span.make
+      ~trace_flags:(Trace_flags.make ~sampled ~random)
+      ?trace_state ?kind ?parent:parent_id ~trace_id ~id:span_id
       ~attrs:
         (if sampled then
            attrs

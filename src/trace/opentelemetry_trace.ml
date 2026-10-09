@@ -70,12 +70,15 @@ open struct
       else
         Parent_not_sampled
     in
-    let trace_id, parent_id, sp_parent, trace_state =
+    (* [random]: W3C random-trace-id flag. Set for trace IDs we generate, and
+       propagated unchanged for a parent's trace ID. *)
+    let trace_id, random, parent_id, sp_parent, trace_state =
       match parent with
       | Trace.P_none ->
-        OTEL.Trace_id.create (), None, OTEL.Trace_sampler.No_parent, ""
+        OTEL.Trace_id.create (), true, None, OTEL.Trace_sampler.No_parent, ""
       | Trace.P_some (Span_otel sp) ->
         ( OTEL.Span.trace_id sp,
+          OTEL.Trace_flags.is_random (OTEL.Span.trace_flags sp),
           Some (OTEL.Span.id sp),
           parent_sampled_of_bool (OTEL.Span.sampled sp),
           sp.OTEL.Proto.Trace.trace_state )
@@ -83,10 +86,11 @@ open struct
         (match Ambient_context.get k_span_ctx with
         | Some sp_ctx ->
           ( OTEL.Span_ctx.trace_id sp_ctx,
+            OTEL.Trace_flags.is_random (OTEL.Span_ctx.trace_flags sp_ctx),
             Some (OTEL.Span_ctx.parent_id sp_ctx),
             parent_sampled_of_bool (OTEL.Span_ctx.sampled sp_ctx),
             OTEL.Span_ctx.trace_state sp_ctx )
-        | None -> OTEL.Trace_id.create (), None, No_parent, "")
+        | None -> OTEL.Trace_id.create (), true, None, No_parent, "")
     in
     let sampled, trace_state =
       OTEL.Trace_sampler.decide_current ~parent:sp_parent ~trace_state trace_id
@@ -109,8 +113,10 @@ open struct
     in
 
     let otel_sp : OTEL.Span.t =
-      OTEL.Span.make ~sampled ?trace_state ~start_time ~id:span_id ~trace_id
-        ~attrs ?parent:parent_id ~end_time:0L name
+      OTEL.Span.make
+        ~trace_flags:OTEL.(Trace_flags.make ~sampled ~random)
+        ?trace_state ~start_time ~id:span_id ~trace_id ~attrs ?parent:parent_id
+        ~end_time:0L name
     in
 
     (* add more data if [__FUNCTION__] is present *)

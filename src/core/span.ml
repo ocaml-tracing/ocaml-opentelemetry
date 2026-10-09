@@ -28,9 +28,14 @@ let[@inline] trace_id self = Trace_id.of_bytes self.trace_id
 
 let[@inline] is_not_dummy self = Span_id.is_valid (id self)
 
-(* spans built without flags (e.g. directly through [Proto]) count as sampled *)
-let[@inline] sampled self =
-  (not (span_has_flags self)) || Int32.logand self.flags 1l <> 0l
+(* spans built without flags (e.g. directly through [Proto]) get the default *)
+let[@inline] trace_flags self : Trace_flags.t =
+  if span_has_flags self then
+    Trace_flags.of_int32 self.flags
+  else
+    Trace_flags.default
+
+let[@inline] sampled self = Trace_flags.is_sampled (trace_flags self)
 
 let[@inline] is_recording self = is_not_dummy self && sampled self
 
@@ -38,18 +43,13 @@ let pp = Proto.Trace.pp_span
 
 let default_kind = ref Proto.Trace.Span_kind_unspecified
 
-let make ?(kind = !default_kind) ?(sampled = true) ?trace_state ?(attrs = [])
-    ?(events = []) ?status ~trace_id ~id ?parent ?(links = []) ~start_time
-    ~end_time name : t =
+let make ?(kind = !default_kind) ?(trace_flags = Trace_flags.default)
+    ?trace_state ?(attrs = []) ?(events = []) ?status ~trace_id ~id ?parent
+    ?(links = []) ~start_time ~end_time name : t =
   let trace_id = Trace_id.to_bytes trace_id in
   let parent_span_id = Option.map Span_id.to_bytes parent in
   let attributes = List.map Key_value.conv attrs in
-  let flags =
-    if sampled then
-      1l
-    else
-      0l
-  in
+  let flags = Trace_flags.to_int32 trace_flags in
   let span =
     make_span ~trace_id ?parent_span_id ~span_id:(Span_id.to_bytes id) ~flags
       ~attributes ~events ?trace_state ?status ~kind ~name ~links
@@ -63,10 +63,10 @@ let dummy : t =
     ~span_id:Span_id.(dummy |> to_bytes)
     ()
 
-let create_new ?kind ?sampled ?(id = Span_id.create ()) ?trace_state ?attrs
+let create_new ?kind ?trace_flags ?(id = Span_id.create ()) ?trace_state ?attrs
     ?events ?status ~trace_id ?parent ?links ~start_time ~end_time name : t =
-  make ?kind ?sampled ~id ~trace_id ?trace_state ?attrs ?events ?status ?parent
-    ?links ~start_time ~end_time name
+  make ?kind ?trace_flags ~id ~trace_id ?trace_state ?attrs ?events ?status
+    ?parent ?links ~start_time ~end_time name
 
 let attrs self = self.attributes |> List.rev_map Key_value.of_otel
 
@@ -103,7 +103,7 @@ let to_span_link (self : t) : Span_link.t =
     ~trace_id:self.trace_id ~span_id:self.span_id ()
 
 let[@inline] to_span_ctx (self : t) : Span_ctx.t =
-  Span_ctx.make ~sampled:(sampled self) ~trace_state:self.trace_state
+  Span_ctx.make ~trace_flags:(trace_flags self) ~trace_state:self.trace_state
     ~trace_id:(trace_id self) ~parent_id:(id self) ()
 
 (* Note: a span must not be concurrently modified from multiple

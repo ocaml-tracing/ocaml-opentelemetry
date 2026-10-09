@@ -21,22 +21,25 @@ module Traceparent = struct
         00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
       ]}
 
-      Only the sampled bit of [{flags}] is kept. The result is a remote
-      {!Span_ctx.t} carrying [trace_state] (the [tracestate] header value).
+      Only the known bits of [{flags}] are kept (see {!Trace_flags}). The result
+      is a {!Span_ctx.t} carrying [trace_state] (the [tracestate] header value).
       @since NEXT_RELEASE returns a {!Span_ctx.t} *)
   let of_value ?(trace_state = "") str : (Span_ctx.t, string) result =
     match Span_ctx.of_w3c_trace_context (Bytes.unsafe_of_string str) with
     | Ok sp ->
       let span_ctx =
-        Span_ctx.make ~remote:true ~sampled:(Span_ctx.sampled sp) ~trace_state
+        Span_ctx.make ~trace_flags:(Span_ctx.trace_flags sp) ~trace_state
           ~trace_id:(Span_ctx.trace_id sp) ~parent_id:(Span_ctx.parent_id sp) ()
       in
       Ok span_ctx
     | Error _ as e -> e
 
-  let to_value ?(sampled : bool option) ~(trace_id : Trace_id.t)
+  (** @since NEXT_RELEASE takes a mandatory [~trace_flags] instead of
+
+      [?sampled] *)
+  let to_value ~(trace_flags : Trace_flags.t) ~(trace_id : Trace_id.t)
       ~(parent_id : Span_id.t) () : string =
-    let span_ctx = Span_ctx.make ?sampled ~trace_id ~parent_id () in
+    let span_ctx = Span_ctx.make ~trace_flags ~trace_id ~parent_id () in
     Bytes.unsafe_to_string @@ Span_ctx.to_w3c_trace_context span_ctx
 end
 
