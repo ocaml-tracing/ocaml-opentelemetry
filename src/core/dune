@@ -16,7 +16,8 @@
   (re_export opentelemetry.atomic)
   (re_export opentelemetry.emitter)
   pbrt
-  threads
+  opentelemetry.domain
+  unix
   ptime
   ptime.clock.os
   mtime
