@@ -90,3 +90,36 @@ let () =
       "parentbased_traceidratio", "0.001";
       "bogus", "";
     ]
+
+(* random-trace-id flag: set on fresh trace IDs, propagated from parents *)
+let () =
+  S.set None;
+  let flags (sp : Span.t) = Span.trace_flags sp in
+  let random sp = Trace_flags.is_random (flags sp) in
+  Tracer.with_ "root" (fun root ->
+      assert (random root);
+      assert (Trace_flags.is_sampled (flags root));
+      Tracer.with_ "child" (fun child -> assert (random child));
+      Tracer.with_ ~force_new_trace_id:true "restart" (fun sp ->
+          assert (random sp)));
+  let ctx_of flags =
+    Span_ctx.make ~trace_flags:(Trace_flags.of_int flags) ~trace_id:tid_hi
+      ~parent_id:(Span_id.create ()) ()
+  in
+  List.iter
+    (fun f ->
+      let parent_ctx = ctx_of f in
+      Tracer.with_ ~parent_ctx "remote child" (fun sp ->
+          Printf.printf "parent flags %02x -> child flags %02x\n" f
+            (Trace_flags.to_int (flags sp));
+          assert (
+            random sp = Trace_flags.is_random (Span_ctx.trace_flags parent_ctx));
+          assert (
+            Bytes.to_string
+              (Span_ctx.to_w3c_trace_context (Span.to_span_ctx sp))
+            |> fun s ->
+            String.sub s 53 2
+            = Printf.sprintf "%02x" (Trace_flags.to_int (flags sp)))))
+    [ 0x00; 0x01; 0x02; 0x03 ];
+  (* explicit trace ID: we don't know if it's random *)
+  Tracer.with_ ~trace_id:tid_lo "explicit" (fun sp -> assert (not (random sp)))

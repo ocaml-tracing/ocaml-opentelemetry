@@ -6,9 +6,14 @@ let pp_traceparent fmt (trace_id, parent_id) =
     (Span_id.to_hex parent_id)
 
 let pp_span_ctx fmt ctx =
-  Format.fprintf fmt "%a sampled:%B remote:%B trace_state:%S" pp_traceparent
+  let flags = Span_ctx.trace_flags ctx in
+  Format.fprintf fmt "%a flags:%a sampled:%B random:%B trace_state:%S"
+    pp_traceparent
     (Span_ctx.trace_id ctx, Span_ctx.parent_id ctx)
-    (Span_ctx.sampled ctx) (Span_ctx.is_remote ctx) (Span_ctx.trace_state ctx)
+    Trace_flags.pp flags
+    (Trace_flags.is_sampled flags)
+    (Trace_flags.is_random flags)
+    (Span_ctx.trace_state ctx)
 
 let test_of_value ?trace_state str =
   let open Format in
@@ -53,6 +58,24 @@ let () =
         ("00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-" ^ flags))
     [ "00"; "01"; "03" ]
 
+(* random flag alone; unknown flags are zeroed *)
+let () =
+  List.iter
+    (fun flags ->
+      test_of_value
+        ("00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-" ^ flags))
+    [ "02"; "ff"; "fc" ]
+
+(* flags round-trip *)
+let () =
+  List.iter
+    (fun flags ->
+      let s = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-" ^ flags in
+      let ctx = Result.get_ok (Trace_context.Traceparent.of_value s) in
+      let s' = Bytes.to_string (Span_ctx.to_w3c_trace_context ctx) in
+      assert (s = s'))
+    [ "00"; "01"; "02"; "03" ]
+
 let () = print_endline ""
 
 let () =
@@ -86,7 +109,9 @@ let () =
 
 let () =
   let ctx =
-    Span_ctx.make ~sampled:true ~trace_state:"ot=th:8"
+    Span_ctx.make
+      ~trace_flags:(Trace_flags.make ~sampled:true ~random:true)
+      ~trace_state:"ot=th:8"
       ~trace_id:(Trace_id.of_hex "4bf92f3577b34da6a3ce929d0e0e4736")
       ~parent_id:(Span_id.of_hex "00f067aa0ba902b7")
       ()
@@ -106,13 +131,16 @@ let () =
 
 let () = print_endline ""
 
-let test_to_value trace_id parent_id =
+let test_to_value trace_flags trace_id parent_id =
   let open Format in
-  printf "@[<v 2>Trace_context.Traceparent.to_value %a:@ %S@]@." pp_traceparent
-    (trace_id, parent_id)
-    (Trace_context.Traceparent.to_value ~trace_id ~parent_id ())
+  printf "@[<v 2>Trace_context.Traceparent.to_value %a flags:%a:@ %S@]@."
+    pp_traceparent (trace_id, parent_id) Trace_flags.pp trace_flags
+    (Trace_context.Traceparent.to_value ~trace_flags ~trace_id ~parent_id ())
 
 let () =
-  test_to_value
-    (Trace_id.of_hex "4bf92f3577b34da6a3ce929d0e0e4736")
-    (Span_id.of_hex "00f067aa0ba902b7")
+  List.iter
+    (fun trace_flags ->
+      test_to_value trace_flags
+        (Trace_id.of_hex "4bf92f3577b34da6a3ce929d0e0e4736")
+        (Span_id.of_hex "00f067aa0ba902b7"))
+    Trace_flags.[ none; sampled; make ~sampled:false ~random:true; default ]

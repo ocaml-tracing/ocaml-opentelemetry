@@ -69,3 +69,7 @@ of_env "parentbased_always_on" "" = parentbased(always_on)
 of_env "parentbased_always_off" "" = parentbased(always_off)
 of_env "parentbased_traceidratio" "0.001" = parentbased(traceidratio(0.001))
 of_env "bogus" "" = parentbased(always_on)
+parent flags 00 -> child flags 01
+parent flags 01 -> child flags 01
+parent flags 02 -> child flags 03
+parent flags 03 -> child flags 03
