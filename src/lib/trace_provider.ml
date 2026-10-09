@@ -57,32 +57,83 @@ let[@inline] emit (span : Span.t) : unit = Emitter.emit (get ()).emit [ span ]
 (** Helper to implement {!with_} and similar functions *)
 let with_thunk_and_finally (self : Tracer.t) ?(force_new_trace_id = false)
     ?trace_state ?(attrs : (string * [< Value.t ]) list = []) ?kind ?trace_id
-    ?parent ?links name cb =
+    ?parent ?parent_ctx ?links name cb =
   let parent =
-    match parent with
-    | Some _ -> parent
-    | None -> Ambient_span.get ()
+    match parent, parent_ctx with
+    | Some _, _ | None, Some _ -> parent
+    | None, None -> Ambient_span.get ()
   in
-  let trace_id =
-    match trace_id, parent with
-    | _ when force_new_trace_id -> Trace_id.create ()
-    | Some trace_id, _ -> trace_id
-    | None, Some p -> Span.trace_id p
-    | None, None -> Trace_id.create ()
+  let parent_ctx =
+    match parent with
+    | Some _ -> None
+    | None -> parent_ctx
+  in
+  let parent_trace =
+    match parent, parent_ctx with
+    | Some p, _ -> Some (Span.trace_id p, Span.trace_flags p)
+    | None, Some c -> Some (Span_ctx.trace_id c, Span_ctx.trace_flags c)
+    | None, None -> None
+  in
+  (* [random]: W3C random-trace-id flag. Set for trace IDs we generate, and
+     propagated unchanged for a parent's trace ID. *)
+  let trace_id, random =
+    match trace_id, parent_trace with
+    | _ when force_new_trace_id -> Trace_id.create (), true
+    | None, Some (tid, flags) -> tid, Trace_flags.is_random flags
+    | Some tid, Some (p_tid, flags) when Trace_id.compare tid p_tid = 0 ->
+      tid, Trace_flags.is_random flags
+    | Some tid, _ -> tid, false (* unknown provenance *)
+    | None, None -> Trace_id.create (), true
   in
   let start_time = Clock.now self.clock in
   let span_id = Span_id.create () in
 
-  let parent_id = Option.map Span.id parent in
+  let parent_id =
+    match parent, parent_ctx with
+    | Some p, _ -> Some (Span.id p)
+    | None, Some c -> Some (Span_ctx.parent_id c)
+    | None, None -> None
+  in
+
+  let sampled, trace_state =
+    let[@inline] of_bool b : Trace_sampler.parent =
+      if b then
+        Parent_sampled
+      else
+        Parent_not_sampled
+    in
+    let parent, parent_ts =
+      match parent, parent_ctx with
+      | Some p, _ -> of_bool (Span.sampled p), p.trace_state
+      | None, Some c -> of_bool (Span_ctx.sampled c), Span_ctx.trace_state c
+      | None, None -> No_parent, ""
+    in
+    let trace_state = Option.value trace_state ~default:parent_ts in
+    Trace_sampler.decide_current ~parent ~random ~trace_state trace_id
+  in
+  let trace_state =
+    match trace_state with
+    | "" -> None
+    | ts -> Some ts
+  in
 
   let span : Span.t =
-    Span.make ?trace_state ?kind ?parent:parent_id ~trace_id ~id:span_id ~attrs
+    Span.make
+      ~trace_flags:(Trace_flags.make ~sampled ~random)
+      ?trace_state ?kind ?parent:parent_id ~trace_id ~id:span_id
+      ~attrs:
+        (if sampled then
+           attrs
+         else
+           [])
       ?links ~start_time ~end_time:start_time name
   in
   let () =
-    match Dynamic_enricher.collect () with
-    | [] -> ()
-    | dyn_attrs -> Span.add_attrs span dyn_attrs
+    if sampled then (
+      match Dynamic_enricher.collect () with
+      | [] -> ()
+      | dyn_attrs -> Span.add_attrs span dyn_attrs
+    )
   in
   (* called once we're done, to emit a span *)
   let finally res =
@@ -96,7 +147,7 @@ let with_thunk_and_finally (self : Tracer.t) ?(force_new_trace_id = false)
       | Ok () -> ()
       | Error (e, bt) -> Span.record_exception span e bt));
 
-    Emitter.emit self.emit [ span ]
+    if sampled then Emitter.emit self.emit [ span ]
   in
   let thunk () = Ambient_span.with_ambient span (fun () -> cb span) in
   thunk, finally
@@ -117,12 +168,16 @@ let with_thunk_and_finally (self : Tracer.t) ?(force_new_trace_id = false)
     @param force_new_trace_id
       if true (default false), the span will not use a ambient scope, the
       [~scope] argument, nor [~trace_id], but will instead always create fresh
-      identifiers for this span *)
+      identifiers for this span
+    @param parent_ctx
+      parent span context, e.g. from an incoming [traceparent]. [~parent] takes
+      precedence; both take precedence over the ambient span. Since NEXT_RELEASE
+*)
 let with_ ?(tracer = default_tracer) ?force_new_trace_id ?trace_state ?attrs
-    ?kind ?trace_id ?parent ?links name (cb : Span.t -> 'a) : 'a =
+    ?kind ?trace_id ?parent ?parent_ctx ?links name (cb : Span.t -> 'a) : 'a =
   let thunk, finally =
     with_thunk_and_finally tracer ?force_new_trace_id ?trace_state ?attrs ?kind
-      ?trace_id ?parent ?links name cb
+      ?trace_id ?parent ?parent_ctx ?links name cb
   in
   try
     let rv = thunk () in

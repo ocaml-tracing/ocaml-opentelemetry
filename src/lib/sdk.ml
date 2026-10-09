@@ -56,10 +56,17 @@ let run_tick_callbacks : unit -> unit = Globals.run_tick_callbacks
     from their ticker. *)
 let tick : unit -> unit = Globals.run_tick_callbacks
 
+(** Install [exp] as the global exporter.
+    @param sampler
+      global {!Trace_sampler}, [None] (default) samples everything. Client
+      setups pass {!Trace_sampler.of_env}, which defaults to
+      [parent_based always_on]. Since NEXT_RELEASE *)
 let set ?(traces = Provider_config.make ~batch:400 ())
     ?(metrics = Provider_config.make ~batch:200 ())
-    ?(logs = Provider_config.make ~batch:400 ()) (exp : Exporter.t) : unit =
+    ?(logs = Provider_config.make ~batch:400 ()) ?sampler (exp : Exporter.t) :
+    unit =
   Self_debug.log Info (fun () -> "opentelemetry: SDK set up");
+  Trace_sampler.set sampler;
   Atomic.set exporter (Some exp);
   let tracer : Tracer.t =
     let t = Tracer.of_exporter exp in
@@ -98,6 +105,7 @@ let self_metrics () : Metrics.t list =
     Emitter.self_metrics (Trace_provider.get ()).emit ~now
     @ Emitter.self_metrics (Meter_provider.get ()).emit ~now
     @ Emitter.self_metrics (Log_provider.get ()).emit ~now
+    @ Trace_sampler.self_metrics ~now
   in
   match get () with
   | None -> emitter_metrics

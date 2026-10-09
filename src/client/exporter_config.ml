@@ -32,6 +32,7 @@ type t = {
   retry_initial_delay_ms: float;
   retry_max_delay_ms: float;
   retry_backoff_multiplier: float;
+  sampler: Opentelemetry.Trace_sampler.t option;
   _rest: rest;
 }
 
@@ -87,6 +88,7 @@ let pp out (self : t) : unit =
     retry_initial_delay_ms;
     retry_max_delay_ms;
     retry_backoff_multiplier;
+    sampler;
     _rest = _;
   } =
     self
@@ -102,7 +104,7 @@ let pp out (self : t) : unit =
      timeout_metrics_ms=%d;@ timeout_logs_ms=%d;@ traces=%a;@ metrics=%a;@ \
      logs=%a;@ http_concurrency_level=%a;@ retry_max_attempts=%d;@ \
      retry_initial_delay_ms=%.0f;@ retry_max_delay_ms=%.0f;@ \
-     retry_backoff_multiplier=%.1f @]}"
+     retry_backoff_multiplier=%.1f;@ sampler=%a @]}"
     debug pp_log_level log_level sdk_disabled self_trace self_metrics url_traces
     url_metrics url_logs ppheaders headers ppheaders headers_traces ppheaders
     headers_metrics ppheaders headers_logs pp_protocol protocol timeout_ms
@@ -110,6 +112,10 @@ let pp out (self : t) : unit =
     traces pp_provider_config metrics pp_provider_config logs ppiopt
     http_concurrency_level retry_max_attempts retry_initial_delay_ms
     retry_max_delay_ms retry_backoff_multiplier
+    (Format.pp_print_option
+       ~none:(fun out () -> Format.fprintf out "none")
+       Opentelemetry.Trace_sampler.pp)
+    sampler
 
 let default_url = "http://localhost:4318"
 
@@ -144,6 +150,7 @@ type 'k make =
   ?retry_initial_delay_ms:float ->
   ?retry_max_delay_ms:float ->
   ?retry_backoff_multiplier:float ->
+  ?sampler:Opentelemetry.Trace_sampler.t ->
   'k
 
 module type ENV = sig
@@ -251,7 +258,9 @@ module Env () : ENV = struct
       ?timeout_traces_ms ?timeout_metrics_ms ?timeout_logs_ms
       ?(self_trace = false) ?(self_metrics = false) ?http_concurrency_level
       ?(retry_max_attempts = 3) ?(retry_initial_delay_ms = 100.)
-      ?(retry_max_delay_ms = 5000.) ?(retry_backoff_multiplier = 2.0) =
+      ?(retry_max_delay_ms = 5000.) ?(retry_backoff_multiplier = 2.0)
+      ?(sampler = Opentelemetry.Trace_sampler.of_env ()) =
+    let sampler = Some sampler in
     let batch_timeout_ = Mtime.Span.(batch_timeout_ms * ms) in
     let traces =
       match traces with
@@ -385,6 +394,7 @@ module Env () : ENV = struct
         retry_initial_delay_ms;
         retry_max_delay_ms;
         retry_backoff_multiplier;
+        sampler;
         _rest = ();
       }
 end

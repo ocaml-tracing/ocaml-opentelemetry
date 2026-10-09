@@ -64,34 +64,65 @@ open struct
   let enter_span () ~__FUNCTION__ ~__FILE__ ~__LINE__ ~level:_ ~params:_
       ~(data : (_ * Trace.user_data) list) ~parent name : Trace.span =
     let start_time = OTEL.Clock.now_main () in
-    let trace_id, parent_id =
+    let[@inline] parent_sampled_of_bool b : OTEL.Trace_sampler.parent =
+      if b then
+        Parent_sampled
+      else
+        Parent_not_sampled
+    in
+    (* [random]: W3C random-trace-id flag. Set for trace IDs we generate, and
+       propagated unchanged for a parent's trace ID. *)
+    let trace_id, random, parent_id, sp_parent, trace_state =
       match parent with
-      | Trace.P_none -> OTEL.Trace_id.create (), None
+      | Trace.P_none ->
+        OTEL.Trace_id.create (), true, None, OTEL.Trace_sampler.No_parent, ""
       | Trace.P_some (Span_otel sp) ->
-        OTEL.Span.trace_id sp, Some (OTEL.Span.id sp)
+        ( OTEL.Span.trace_id sp,
+          OTEL.Trace_flags.is_random (OTEL.Span.trace_flags sp),
+          Some (OTEL.Span.id sp),
+          parent_sampled_of_bool (OTEL.Span.sampled sp),
+          sp.OTEL.Proto.Trace.trace_state )
       | _ ->
         (match Ambient_context.get k_span_ctx with
         | Some sp_ctx ->
-          OTEL.Span_ctx.trace_id sp_ctx, Some (OTEL.Span_ctx.parent_id sp_ctx)
-        | None -> OTEL.Trace_id.create (), None)
+          ( OTEL.Span_ctx.trace_id sp_ctx,
+            OTEL.Trace_flags.is_random (OTEL.Span_ctx.trace_flags sp_ctx),
+            Some (OTEL.Span_ctx.parent_id sp_ctx),
+            parent_sampled_of_bool (OTEL.Span_ctx.sampled sp_ctx),
+            OTEL.Span_ctx.trace_state sp_ctx )
+        | None -> OTEL.Trace_id.create (), true, None, No_parent, "")
+    in
+    let sampled, trace_state =
+      OTEL.Trace_sampler.decide_current ~parent:sp_parent ~random ~trace_state
+        trace_id
+    in
+    let trace_state =
+      match trace_state with
+      | "" -> None
+      | ts -> Some ts
     in
 
     let span_id = OTEL.Span_id.create () in
 
     let attrs =
-      ("code.filepath", `String __FILE__)
-      :: ("code.lineno", `Int __LINE__)
-      :: data
+      if sampled then
+        ("code.filepath", `String __FILE__)
+        :: ("code.lineno", `Int __LINE__)
+        :: data
+      else
+        []
     in
 
     let otel_sp : OTEL.Span.t =
-      OTEL.Span.make ~start_time ~id:span_id ~trace_id ~attrs ?parent:parent_id
+      OTEL.Span.make
+        ~trace_flags:OTEL.(Trace_flags.make ~sampled ~random)
+        ?trace_state ~start_time ~id:span_id ~trace_id ~attrs ?parent:parent_id
         ~end_time:0L name
     in
 
     (* add more data if [__FUNCTION__] is present *)
     (match __FUNCTION__ with
-    | Some __FUNCTION__ when OTEL.Span.is_not_dummy otel_sp ->
+    | Some __FUNCTION__ when OTEL.Span.is_recording otel_sp ->
       let function_name, module_path =
         try
           let last_dot = String.rindex __FUNCTION__ '.' in
@@ -119,7 +150,7 @@ open struct
 
   let exit_span () sp =
     match sp with
-    | Span_otel span when OTEL.Span.is_not_dummy span ->
+    | Span_otel span when OTEL.Span.is_recording span ->
       (* emit the span after setting the end timestamp *)
       let end_time = OTEL.Clock.now_main () in
       OTEL.Proto.Trace.span_set_end_time_unix_nano span end_time;
