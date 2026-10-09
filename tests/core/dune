@@ -4,10 +4,11 @@
   t_size
   t_histogram
   test_span_dummy
-  test_trace_sampler)
+  test_trace_sampler
+  test_rand_bytes)
  (package opentelemetry)
- (modules :standard \ test_tracestate_hegel)
- (libraries pbrt unix opentelemetry))
+ (modules :standard \ test_tracestate_hegel test_rand_bytes_domain)
+ (libraries pbrt unix opentelemetry opentelemetry.core))
 
 (test
  (name test_tracestate_hegel)
@@ -16,3 +17,11 @@
  (enabled_if
   (>= %{ocaml_version} 5.4))
  (libraries hegel opentelemetry))
+
+(test
+ (name test_rand_bytes_domain)
+ (modules test_rand_bytes_domain)
+ (package opentelemetry)
+ (enabled_if
+  (>= %{ocaml_version} 5.0))
+ (libraries opentelemetry.core))
