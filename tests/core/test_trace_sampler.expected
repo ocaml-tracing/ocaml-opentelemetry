@@ -73,3 +73,9 @@ parent flags 00 -> child flags 01
 parent flags 01 -> child flags 01
 parent flags 02 -> child flags 03
 parent flags 03 -> child flags 03
+
+non-random warning ratio, parent, not random: true
+non-random warning ratio, parent, random: false
+non-random warning ratio, root, not random: false
+non-random warning parentbased(ratio), parent, not random: false
+non-random warning always_on, parent, not random: false

@@ -93,7 +93,8 @@ open struct
         | None -> OTEL.Trace_id.create (), true, None, No_parent, "")
     in
     let sampled, trace_state =
-      OTEL.Trace_sampler.decide_current ~parent:sp_parent ~trace_state trace_id
+      OTEL.Trace_sampler.decide_current ~parent:sp_parent ~random ~trace_state
+        trace_id
     in
     let trace_state =
       match trace_state with

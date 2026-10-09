@@ -46,12 +46,42 @@ val get : unit -> t option
 val set : t option -> unit
 
 val decide :
-  t -> parent:parent -> trace_state:string -> Trace_id.t -> bool * string
-(** [decide sampler ~parent ~trace_state trace_id] is [(sampled, trace_state')]
-    where [trace_state] is the parent's (or an explicit) tracestate *)
+  t ->
+  parent:parent ->
+  random:bool ->
+  trace_state:string ->
+  Trace_id.t ->
+  bool * string
+(** [decide sampler ~parent ~random ~trace_state trace_id] is
+    [(sampled, trace_state')] where [trace_state] is the parent's (or an
+    explicit) tracestate, and [random] is the W3C random flag of the trace (see
+    {!Trace_flags.is_random}).
+
+    If {!trace_id_ratio} decides for a non-root span whose [random] flag is
+    unset, the callback set by {!set_on_non_random_parent} is called. *)
+
+val default_on_non_random_parent : Trace_id.t -> unit
+(** Prints a compatibility warning on stderr, at most once every 10s.
+
+    From the
+    {{:https://opentelemetry.io/docs/specs/otel/trace/sdk/#compatibility-warnings-for-probabilitysampler}
+     SDK spec}: "When a ProbabilitySampler Sampler makes a decision for a
+    non-root Span using TraceID randomness when the Trace random flag was not
+    set, the SDK SHOULD issue a warning statement in its log with a
+    compatibility warning." *)
+
+val set_on_non_random_parent : (Trace_id.t -> unit) -> unit
+(** Set the callback called with the trace ID when a ratio decision relies on
+    the randomness of a trace ID whose random flag is unset (e.g. propagated by
+    a W3C Trace Context Level 1 caller). Default is
+    {!default_on_non_random_parent}. Custom callbacks are not rate limited. *)
 
 val decide_current :
-  parent:parent -> trace_state:string -> Trace_id.t -> bool * string
+  parent:parent ->
+  random:bool ->
+  trace_state:string ->
+  Trace_id.t ->
+  bool * string
 (** {!decide} with the current global sampler, counted in {!self_metrics} *)
 
 val self_metrics : now:Timestamp_ns.t -> Metrics.t list

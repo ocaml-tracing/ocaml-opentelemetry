@@ -56,7 +56,9 @@ let () =
         (fun (pname, parent, trace_state) ->
           List.iter
             (fun (tname, tid) ->
-              let sampled, ts = S.decide s ~parent ~trace_state tid in
+              let sampled, ts =
+                S.decide s ~parent ~random:true ~trace_state tid
+              in
               Format.printf "decide %a %s %s = %B %S@." S.pp s pname tname
                 sampled ts)
             [ "lo", tid_lo; "hi", tid_hi ])
@@ -65,11 +67,19 @@ let () =
 
 let () =
   let sampler = S.parent_based S.always_off in
-  assert (not (fst (S.decide sampler ~parent:No_parent ~trace_state:"" tid_hi)));
-  assert (fst (S.decide sampler ~parent:Parent_sampled ~trace_state:"" tid_hi));
   assert (
     not
-      (fst (S.decide sampler ~parent:Parent_not_sampled ~trace_state:"" tid_hi)))
+      (fst
+         (S.decide sampler ~random:true ~parent:No_parent ~trace_state:"" tid_hi)));
+  assert (
+    fst
+      (S.decide sampler ~random:true ~parent:Parent_sampled ~trace_state:""
+         tid_hi));
+  assert (
+    not
+      (fst
+         (S.decide sampler ~random:true ~parent:Parent_not_sampled
+            ~trace_state:"" tid_hi)))
 
 let () =
   print_endline "";
@@ -123,3 +133,23 @@ let () =
     [ 0x00; 0x01; 0x02; 0x03 ];
   (* explicit trace ID: we don't know if it's random *)
   Tracer.with_ ~trace_id:tid_lo "explicit" (fun sp -> assert (not (random sp)))
+
+(* compatibility warning for non-root ratio decisions without random flag *)
+let () =
+  print_endline "";
+  let warned = ref [] in
+  S.set_on_non_random_parent (fun tid -> warned := tid :: !warned);
+  let check name s ~parent ~random =
+    warned := [];
+    ignore (S.decide s ~parent ~random ~trace_state:"" tid_hi : bool * string);
+    Printf.printf "non-random warning %s: %B\n" name (!warned <> [])
+  in
+  let ratio = S.trace_id_ratio 0.5 in
+  check "ratio, parent, not random" ratio ~parent:Parent_sampled ~random:false;
+  check "ratio, parent, random" ratio ~parent:Parent_sampled ~random:true;
+  check "ratio, root, not random" ratio ~parent:No_parent ~random:false;
+  check "parentbased(ratio), parent, not random" (S.parent_based ratio)
+    ~parent:Parent_not_sampled ~random:false;
+  check "always_on, parent, not random" S.always_on ~parent:Parent_sampled
+    ~random:false;
+  S.set_on_non_random_parent S.default_on_non_random_parent

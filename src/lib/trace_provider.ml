@@ -109,7 +109,7 @@ let with_thunk_and_finally (self : Tracer.t) ?(force_new_trace_id = false)
       | None, None -> No_parent, ""
     in
     let trace_state = Option.value trace_state ~default:parent_ts in
-    Trace_sampler.decide_current ~parent ~trace_state trace_id
+    Trace_sampler.decide_current ~parent ~random ~trace_state trace_id
   in
   let trace_state =
     match trace_state with
