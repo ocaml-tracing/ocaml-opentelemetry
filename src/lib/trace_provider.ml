@@ -173,10 +173,10 @@ let with_thunk_and_finally (self : Tracer.t) ?(force_new_trace_id = false)
       overrides the global {!Trace_sampler} if this span is a root (no parent,
       ambient or explicit); ignored otherwise, as the span follows its parent's
       decision.
-    @since NEXT_RELEASE
+    @since 0.92
     @param parent_ctx
       parent span context, e.g. from an incoming [traceparent]. [~parent] takes
-      precedence; both take precedence over the ambient span. Since NEXT_RELEASE *)
+      precedence; both take precedence over the ambient span. Since 0.92 *)
 let with_ ?(tracer = default_tracer) ?force_new_trace_id ?sampler ?trace_state
     ?attrs ?kind ?trace_id ?parent ?parent_ctx ?links name (cb : Span.t -> 'a) :
     'a =

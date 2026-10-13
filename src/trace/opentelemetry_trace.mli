@@ -42,7 +42,7 @@ module Extensions : sig
           (** [Trace.with_span ~params:[Sampler s]] overrides the global
               {!Opentelemetry.Trace_sampler} if the span is a root. See
               {!Opentelemetry.Trace_sampler.decide_current}.
-              @since NEXT_RELEASE *)
+              @since 0.92 *)
 
   type Otrace.metric +=
     | Metric_hist of OTEL.Metrics.histogram_data_point

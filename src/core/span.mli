@@ -42,7 +42,7 @@ val make :
 (** [make ~trace_id ~id name] creates a new span
     @param trace_id the trace this belongs to
     @param trace_flags
-      W3C trace flags (default {!Trace_flags.default}), since NEXT_RELEASE
+      W3C trace flags (default {!Trace_flags.default}), since 0.92
     @param parent parent span, if any
     @param links
       list of links to other spans, each with their trace state (see
@@ -60,15 +60,15 @@ val is_not_dummy : t -> bool [@@alert expert "you probably want is_recording"]
 
 val trace_flags : t -> Trace_flags.t
 (** W3C trace flags. Spans without flags get {!Trace_flags.default}.
-    @since NEXT_RELEASE *)
+    @since 0.92 *)
 
 val sampled : t -> bool
 (** [Trace_flags.is_sampled (trace_flags self)].
-    @since NEXT_RELEASE *)
+    @since 0.92 *)
 
 val is_recording : t -> bool
 (** Not dummy and sampled. Mutators are no-ops otherwise.
-    @since NEXT_RELEASE *)
+    @since 0.92 *)
 
 val dummy : t
 (** Dummy span, will not record anything *)

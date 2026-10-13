@@ -94,7 +94,7 @@ type t = {
       (** Global trace sampler. Read from OTEL_TRACES_SAMPLER and
           OTEL_TRACES_SAMPLER_ARG. Default [Some (parent_based always_on)], the
           OTEL spec default. [None] samples everything.
-          @since NEXT_RELEASE *)
+          @since 0.92 *)
   _rest: rest;
 }
 (** Configuration.

@@ -7,7 +7,7 @@
 
     {{:https://opentelemetry.io/docs/specs/otel/trace/tracestate-probability-sampling/}
      spec}
-    @since NEXT_RELEASE *)
+    @since 0.92 *)
 
 type t
 
@@ -88,7 +88,7 @@ val decide_current :
     @param sampler
       overrides the global sampler for root spans only (as
       [parent_based sampler]): spans with a parent follow the parent's decision.
-    @since NEXT_RELEASE *)
+    @since 0.92 *)
 
 val self_metrics : now:Timestamp_ns.t -> Metrics.t list
 (** [otel.sdk.span.sampled] and [otel.sdk.span.not_sampled] *)

@@ -23,7 +23,7 @@ module Traceparent = struct
 
       Only the known bits of [{flags}] are kept (see {!Trace_flags}). The result
       is a {!Span_ctx.t} carrying [trace_state] (the [tracestate] header value).
-      @since NEXT_RELEASE returns a {!Span_ctx.t} *)
+      @since 0.92 returns a {!Span_ctx.t} *)
   let of_value ?(trace_state = "") str : (Span_ctx.t, string) result =
     match Span_ctx.of_w3c_trace_context (Bytes.unsafe_of_string str) with
     | Ok sp ->
@@ -34,7 +34,7 @@ module Traceparent = struct
       Ok span_ctx
     | Error _ as e -> e
 
-  (** @since NEXT_RELEASE takes a mandatory [~trace_flags] instead of
+  (** @since 0.92 takes a mandatory [~trace_flags] instead of
 
       [?sampled] *)
   let to_value ~(trace_flags : Trace_flags.t) ~(trace_id : Trace_id.t)
@@ -46,7 +46,7 @@ end
 (** The tracestate header, and the OpenTelemetry [ot=th:<hex>] threshold
     https://www.w3.org/TR/trace-context/#tracestate-header
     https://opentelemetry.io/docs/specs/otel/trace/tracestate-probability-sampling/
-    @since NEXT_RELEASE *)
+    @since 0.92 *)
 module Tracestate = struct
   let name = "tracestate"
 
@@ -123,7 +123,7 @@ end
 
 (** Headers to propagate this context: [traceparent], and [tracestate] if
     non-empty.
-    @since NEXT_RELEASE *)
+    @since 0.92 *)
 let headers_of_span_ctx (ctx : Span_ctx.t) : (string * string) list =
   let tp = Bytes.unsafe_to_string (Span_ctx.to_w3c_trace_context ctx) in
   match Span_ctx.trace_state ctx with

@@ -93,7 +93,7 @@ let collect_and_emit (m : Meter.t) : unit =
       global interval, so later calls to {!set_min_interval} apply. A custom
       atomic is not clamped.
 
-    @since NEXT_RELEASE *)
+    @since 0.92 *)
 let add_periodic_collection ?(min_interval = global_min_interval)
     (meter : Meter.t Atomic.t) : unit =
   let limiter = Interval_limiter.create_atomic ~min_interval () in

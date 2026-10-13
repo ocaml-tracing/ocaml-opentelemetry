@@ -6,7 +6,7 @@
     Only the [sampled] (0x01) and [random-trace-id] (0x02) flags are defined;
     other bits are reserved and "Vendors MUST set those to zero", so they are
     always cleared.
-    @since NEXT_RELEASE *)
+    @since 0.92 *)
 
 type t = private int
 

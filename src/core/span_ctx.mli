@@ -7,7 +7,7 @@
 type t
 
 module Flags = Trace_flags
-(** @since NEXT_RELEASE *)
+(** @since 0.92 *)
 
 val make :
   ?trace_state:string ->
@@ -18,8 +18,8 @@ val make :
   t
 (** @param trace_flags
       W3C trace flags. They must reflect the trace's actual sampling decision
-      and trace ID randomness, so there is no default. Since NEXT_RELEASE
-    @param trace_state W3C [tracestate] value, since NEXT_RELEASE *)
+      and trace ID randomness, so there is no default. Since 0.92
+    @param trace_state W3C [tracestate] value, since 0.92 *)
 
 val dummy : t
 (** Invalid span context, to be used as a placeholder *)
@@ -33,14 +33,14 @@ val parent_id : t -> Span_id.t
 
 val trace_flags : t -> Trace_flags.t
 (** W3C trace flags.
-    @since NEXT_RELEASE *)
+    @since 0.92 *)
 
 val sampled : t -> bool
 (** [Trace_flags.is_sampled (trace_flags self)] *)
 
 val trace_state : t -> string
 (** W3C [tracestate] value, [""] if absent.
-    @since NEXT_RELEASE *)
+    @since 0.92 *)
 
 val to_w3c_trace_context : t -> bytes
 

@@ -28,7 +28,7 @@ val string_of_level : level -> string
 val level_above : min_level:level -> level -> bool
 (** [level_above ~min_level lvl] is true if messages at level [lvl] should be
     logged.
-    @since NEXT_RELEASE *)
+    @since 0.92 *)
 
 val log : level -> (unit -> string) -> unit
 (** [log level mk_msg] emits a diagnostic message if the current logger is

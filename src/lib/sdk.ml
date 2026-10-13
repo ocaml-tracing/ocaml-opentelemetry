@@ -60,7 +60,7 @@ let tick : unit -> unit = Globals.run_tick_callbacks
     @param sampler
       global {!Trace_sampler}, [None] (default) samples everything. Client
       setups pass {!Trace_sampler.of_env}, which defaults to
-      [parent_based always_on]. Since NEXT_RELEASE *)
+      [parent_based always_on]. Since 0.92 *)
 let set ?(traces = Provider_config.make ~batch:400 ())
     ?(metrics = Provider_config.make ~batch:200 ())
     ?(logs = Provider_config.make ~batch:400 ()) ?sampler (exp : Exporter.t) :

@@ -18,7 +18,7 @@ val pp : Format.formatter -> t -> unit
 
 val num_signals : t -> int
 (** Total number of individual signals in this batch.
-    @since NEXT_RELEASE *)
+    @since 0.92 *)
 
 val of_logs :
   ?service_name:string ->

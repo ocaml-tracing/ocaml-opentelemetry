@@ -49,7 +49,7 @@ module Server : sig
 
   val get_trace_context : Request.t -> Otel.Span_ctx.t option
   (** Remote span context from the W3C [traceparent] and [tracestate] headers.
-      @since NEXT_RELEASE returns a {!Otel.Span_ctx.t}, no [?from] *)
+      @since 0.92 returns a {!Otel.Span_ctx.t}, no [?from] *)
 end = struct
   let attrs_of_request (req : Request.t) =
     let meth = req |> Request.meth |> Code.string_of_method in
