@@ -17,6 +17,7 @@ depends: [
   "lwt" {>= "5.3"}
   "cohttp" {>= "6.0.0"}
   "cohttp-lwt" {>= "6.0.0"}
+  "cohttp-lwt-unix" {with-test}
   "alcotest" {with-test}
 ]
 build: [
