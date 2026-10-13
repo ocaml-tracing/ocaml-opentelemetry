@@ -162,7 +162,8 @@ let create_backend = create_exporter
 let setup_ ~sw ~config env : unit =
   Opentelemetry_ambient_context.set_current_storage Ambient_context_eio.storage;
   let exp = create_exporter ~config ~sw ~env () in
-  Sdk.set ~traces:config.traces ~metrics:config.metrics ~logs:config.logs exp;
+  Sdk.set ~traces:config.traces ~metrics:config.metrics ~logs:config.logs
+    ?sampler:config.sampler exp;
 
   Option.iter
     (fun min_level -> Opentelemetry.Self_debug.to_stderr ~min_level ())

@@ -33,37 +33,36 @@ let signals_from_batch (signal_batch : Client.Resource_signal.t) =
 let filter_map_spans f signals =
   signals
   |> CCList.flat_map (function
-       | `Log _ | `Metric _ -> []
-       | `Trace (r : Proto.Trace.resource_spans) ->
-         r.scope_spans
-         |> CCList.flat_map (fun ss ->
-                ss.Proto.Trace.spans |> List.filter_map f))
+    | `Log _ | `Metric _ -> []
+    | `Trace (r : Proto.Trace.resource_spans) ->
+      r.scope_spans
+      |> CCList.flat_map (fun ss -> ss.Proto.Trace.spans |> List.filter_map f))
 
 let count_spans_with_name name signals =
   signals
   |> filter_map_spans (fun s ->
-         if String.equal s.Proto.Trace.name name then
-           Some s
-         else
-           None)
+      if String.equal s.Proto.Trace.name name then
+        Some s
+      else
+        None)
   |> List.length
 
 let filter_map_metrics f signals =
   signals
   |> CCList.flat_map (function
-       | `Log _ | `Trace _ -> []
-       | `Metric (r : Proto.Metrics.resource_metrics) ->
-         r.scope_metrics
-         |> CCList.flat_map (fun ss ->
-                ss.Proto.Metrics.metrics |> List.filter_map f))
+    | `Log _ | `Trace _ -> []
+    | `Metric (r : Proto.Metrics.resource_metrics) ->
+      r.scope_metrics
+      |> CCList.flat_map (fun ss ->
+          ss.Proto.Metrics.metrics |> List.filter_map f))
 
 let count_metrics_with_name name signals =
   signals
   |> filter_map_metrics (fun s ->
-         if String.equal s.Proto.Metrics.name name then
-           Some s
-         else
-           None)
+      if String.equal s.Proto.Metrics.name name then
+        Some s
+      else
+        None)
   |> List.length
 
 let number_data_point_to_float : Proto.Metrics.number_data_point_value -> float
@@ -74,37 +73,36 @@ let number_data_point_to_float : Proto.Metrics.number_data_point_value -> float
 let get_metric_values name signals =
   signals
   |> filter_map_metrics (fun (m : Proto.Metrics.metric) ->
-         if not (String.equal m.name name) then
-           None
-         else
-           Option.some
-           @@
-           match m.data with
-           | Some (Sum { data_points; is_monotonic = true; _ }) ->
-             List.fold_left
-               (fun acc (p : Proto.Metrics.number_data_point) ->
-                 acc
-                 +. CCOption.map_or ~default:0. number_data_point_to_float
-                      p.value)
-               0. data_points
-           | _ -> failwith "TODO: Support for getting other metrics")
+      if not (String.equal m.name name) then
+        None
+      else
+        Option.some
+        @@
+        match m.data with
+        | Some (Sum { data_points; is_monotonic = true; _ }) ->
+          List.fold_left
+            (fun acc (p : Proto.Metrics.number_data_point) ->
+              acc
+              +. CCOption.map_or ~default:0. number_data_point_to_float p.value)
+            0. data_points
+        | _ -> failwith "TODO: Support for getting other metrics")
 
 let filter_map_logs (f : Proto.Logs.log_record -> 'a option) signals : 'a list =
   signals
   |> CCList.flat_map (function
-       | `Metric _ | `Trace _ -> []
-       | `Log (r : Proto.Logs.resource_logs) ->
-         r.scope_logs
-         |> CCList.flat_map (fun ss ->
-                ss.Proto.Logs.log_records |> List.filter_map f))
+    | `Metric _ | `Trace _ -> []
+    | `Log (r : Proto.Logs.resource_logs) ->
+      r.scope_logs
+      |> CCList.flat_map (fun ss ->
+          ss.Proto.Logs.log_records |> List.filter_map f))
 
 let count_logs_with_body p signals =
   signals
   |> filter_map_logs (fun (l : Proto.Logs.log_record) ->
-         if p l.body then
-           Some ()
-         else
-           None)
+      if p l.body then
+        Some ()
+      else
+        None)
   |> List.length
 
 type params = {
@@ -179,15 +177,15 @@ let tests params signal_batches =
             (let all_alloc_events =
                signals
                |> filter_map_spans (fun s ->
-                      if not (String.equal s.name "alloc") then
-                        Some s.events
-                      else
-                        None)
+                   if not (String.equal s.name "alloc") then
+                     Some s.events
+                   else
+                     None)
                |> List.flatten
              in
              all_alloc_events
              |> List.for_all (fun (e : Proto.Trace.span_event) ->
-                    String.equal e.name "done with alloc")));
+                 String.equal e.name "done with alloc")));
     test "num-sleep metrics" (fun () ->
         Alcotest.(check' bool)
           ~msg:
@@ -206,10 +204,10 @@ let tests params signal_batches =
           ~actual:
             (signals
             |> count_logs_with_body (function
-                 | Some (Proto.Common.String_value s)
-                   when String.prefix ~pre:"inner at" s ->
-                   true
-                 | _ -> false)));
+              | Some (Proto.Common.String_value s)
+                when String.prefix ~pre:"inner at" s ->
+                true
+              | _ -> false)));
   ]
 
 let run_tests ~port (cmds : _ list) : unit =

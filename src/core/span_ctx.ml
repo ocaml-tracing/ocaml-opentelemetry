@@ -2,42 +2,38 @@ open Common_
 
 (* see: https://opentelemetry.io/docs/specs/otel/trace/api/#spancontext *)
 
-(* TODO: trace state *)
-
-external int_of_bool : bool -> int = "%identity"
-
-module Flags = struct
-  let sampled = 1
-
-  let remote = 2
-end
+module Flags = Trace_flags
 
 type t = {
   trace_id: Trace_id.t;
   parent_id: Span_id.t;
-  flags: int;
+  trace_flags: Trace_flags.t;
+  trace_state: string;
 }
 
-let dummy = { trace_id = Trace_id.dummy; parent_id = Span_id.dummy; flags = 0 }
+let dummy =
+  {
+    trace_id = Trace_id.dummy;
+    parent_id = Span_id.dummy;
+    trace_flags = Trace_flags.none;
+    trace_state = "";
+  }
 
-let make ?(remote = false) ?(sampled = false) ~trace_id ~parent_id () : t =
-  let flags =
-    0
-    lor (int_of_bool remote lsl Flags.remote)
-    lor (int_of_bool sampled lsl Flags.sampled)
-  in
-  { trace_id; parent_id; flags }
+let make ?(trace_state = "") ~trace_flags ~trace_id ~parent_id () : t =
+  { trace_id; parent_id; trace_flags; trace_state }
 
 let[@inline] is_valid self =
   Trace_id.is_valid self.trace_id && Span_id.is_valid self.parent_id
 
-let[@inline] sampled self = self.flags land (1 lsl Flags.sampled) != 0
+let[@inline] trace_flags self = self.trace_flags
 
-let[@inline] is_remote self = self.flags land (1 lsl Flags.remote) != 0
+let[@inline] sampled self = Trace_flags.is_sampled self.trace_flags
 
 let[@inline] trace_id self = self.trace_id
 
 let[@inline] parent_id self = self.parent_id
+
+let[@inline] trace_state self = self.trace_state
 
 let to_w3c_trace_context (self : t) : bytes =
   let bs = Bytes.create 55 in
@@ -50,12 +46,9 @@ let to_w3c_trace_context (self : t) : bytes =
   Span_id.to_hex_into self.parent_id bs 36;
   (* +16 *)
   Bytes.set bs 52 '-';
-  Bytes.set bs 53 '0';
-  Bytes.set bs 54
-    (if sampled self then
-       '1'
-     else
-       '0');
+  let flags = Trace_flags.to_int self.trace_flags in
+  Bytes.set bs 53 (Util_bytes_.hex_upper_nibble flags);
+  Bytes.set bs 54 (Util_bytes_.hex_lower_nibble flags);
   bs
 
 let of_w3c_trace_context bs : _ result =
@@ -77,14 +70,12 @@ let of_w3c_trace_context bs : _ result =
       with Invalid_argument msg -> invalid_arg (spf "in span id: %s" msg)
     in
     if Bytes.get bs 52 <> '-' then invalid_arg "expected '-' after parent_id";
-    let sampled =
+    let trace_flags =
       match int_of_string_opt ("0x" ^ Bytes.sub_string bs 53 2) with
-      | Some flags -> flags land 1 = 1
-      | None -> false
+      | Some flags -> Trace_flags.of_int flags (* unknown flags are dropped *)
+      | None -> Trace_flags.none
     in
-
-    (* ignore other flags *)
-    Ok (make ~remote:true ~sampled ~trace_id ~parent_id ())
+    Ok (make ~trace_flags ~trace_id ~parent_id ())
   with Invalid_argument msg -> Error msg
 
 let of_w3c_trace_context_exn bs =

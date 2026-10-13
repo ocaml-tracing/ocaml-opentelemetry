@@ -8,11 +8,17 @@ let int_to_hex (i : int) =
   else
     Char.chr (i - 10 + Char.code 'a')
 
+(** Hex digit for bits 4-7 of [n] *)
+let[@inline] hex_upper_nibble (n : int) : char = int_to_hex ((n lsr 4) land 0xf)
+
+(** Hex digit for bits 0-3 of [n] *)
+let[@inline] hex_lower_nibble (n : int) : char = int_to_hex (n land 0xf)
+
 let bytes_to_hex_into b res off : unit =
   for i = 0 to Bytes.length b - 1 do
     let n = Char.code (Bytes.get b i) in
-    Bytes.set res ((2 * i) + off) (int_to_hex ((n land 0xf0) lsr 4));
-    Bytes.set res ((2 * i) + 1 + off) (int_to_hex (n land 0x0f))
+    Bytes.set res ((2 * i) + off) (hex_upper_nibble n);
+    Bytes.set res ((2 * i) + 1 + off) (hex_lower_nibble n)
   done
 
 let bytes_to_hex (b : bytes) : string =

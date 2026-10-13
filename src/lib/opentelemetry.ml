@@ -82,6 +82,7 @@ module Trace_id = Trace_id
 let k_trace_id = Trace_id.k_trace_id
 
 module Span_id = Span_id
+module Trace_flags = Trace_flags
 module Span_ctx = Span_ctx
 
 let k_ambient = Span_ctx.k_ambient
@@ -113,6 +114,9 @@ module Span_kind = Span_kind
 
 module Span = Span
 module Ambient_span = Ambient_span
+
+module Trace_sampler = Trace_sampler
+(** @since NEXT_RELEASE *)
 
 module Tracer = struct
   include Tracer

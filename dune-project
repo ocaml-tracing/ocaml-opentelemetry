@@ -26,11 +26,15 @@
  (synopsis "Core library for instrumentation and serialization for https://opentelemetry.io")
  (depends
   (ocaml
-   (>= "4.08"))
+   (>= "4.14"))
   ptime
   hmap
   (odoc :with-doc)
   (alcotest :with-test)
+  (hegel
+   (and
+    :with-test
+    (>= 0.25.0)))
   (pbrt
    (and
     (>= 4.0)
@@ -45,8 +49,7 @@
   (ocamlformat
    (and
     :with-dev-setup
-    (>= 0.27)
-    (< 0.28)))
+    (= 0.28.1)))
   (mtime
    (>= "1.4")))
  (depopts atomic trace thread-local-storage lwt eio picos)
@@ -76,7 +79,7 @@
  (synopsis "Lwt-compatible instrumentation for https://opentelemetry.io")
  (depends
   (ocaml
-   (>= "4.08"))
+   (>= "4.14"))
   (opentelemetry
    (= :version))
   ambient-context-lwt
@@ -94,7 +97,7 @@
  (name opentelemetry-client-ocurl)
  (depends
   (ocaml
-   (>= "4.11"))
+   (>= "4.14"))
   (mtime
    (>= "1.4"))
   ; for spans
@@ -117,7 +120,7 @@
  (name opentelemetry-client-ocurl-lwt)
  (depends
   (ocaml
-   (>= "4.11"))
+   (>= "4.14"))
   (mtime
    (>= "1.4"))
   (opentelemetry
@@ -143,7 +146,7 @@
  (name opentelemetry-logs)
  (depends
   (ocaml
-   (>= "4.08"))
+   (>= "4.14"))
   (opentelemetry
    (= :version))
   (odoc :with-doc)
@@ -166,7 +169,7 @@
  (name opentelemetry-cohttp-lwt)
  (depends
   (ocaml
-   (>= "4.08"))
+   (>= "4.14"))
   (opentelemetry
    (= :version))
   (opentelemetry-lwt
@@ -186,7 +189,7 @@
  (name opentelemetry-client-cohttp-lwt)
  (depends
   (ocaml
-   (>= "4.08"))
+   (>= "4.14"))
   (mtime
    (>= "1.4"))
   ; for spans

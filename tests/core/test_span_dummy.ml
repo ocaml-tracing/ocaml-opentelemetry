@@ -9,7 +9,7 @@ let check_pristine () =
   assert (Span.links d = []);
   assert (Span.status d = None);
   assert (Span.kind d = None);
-  assert (not (Span.is_not_dummy d))
+  assert (not ((Span.is_not_dummy [@alert "-expert"]) d))
 
 let check name f =
   f ();

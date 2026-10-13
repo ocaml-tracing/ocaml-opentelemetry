@@ -16,7 +16,7 @@ let test_config_printing () =
     \ timeout_logs_ms=10000; traces={batch=400; timeout=2s}; metrics={batch=200;\n\
     \ timeout=2s}; logs={batch=400; timeout=2s}; http_concurrency_level=None;\n\
     \ retry_max_attempts=3; retry_initial_delay_ms=100; retry_max_delay_ms=5000;\n\
-    \ retry_backoff_multiplier=2.0 }"
+    \ retry_backoff_multiplier=2.0; sampler=parentbased(always_on) }"
   in
   check' string ~msg:"is rendered correctly" ~actual ~expected
 

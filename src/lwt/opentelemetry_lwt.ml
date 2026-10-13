@@ -22,11 +22,12 @@ module Tracer = struct
 
   (** Sync span guard *)
   let with_ (type a) ?(tracer = default) ?force_new_trace_id ?trace_state ?attrs
-      ?kind ?trace_id ?parent ?links name (cb : Span.t -> a Lwt.t) : a Lwt.t =
+      ?kind ?trace_id ?parent ?parent_ctx ?links name (cb : Span.t -> a Lwt.t) :
+      a Lwt.t =
     let open Lwt.Syntax in
     let thunk, finally =
       with_thunk_and_finally tracer ?force_new_trace_id ?trace_state ?attrs
-        ?kind ?trace_id ?parent ?links name cb
+        ?kind ?trace_id ?parent ?parent_ctx ?links name cb
     in
 
     let* r =

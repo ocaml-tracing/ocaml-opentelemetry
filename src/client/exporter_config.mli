@@ -90,6 +90,11 @@ type t = {
       (** Maximum delay in milliseconds between retries. Default 5000ms. *)
   retry_backoff_multiplier: float;
       (** Multiplier for exponential backoff. Default 2.0. *)
+  sampler: Opentelemetry.Trace_sampler.t option;
+      (** Global trace sampler. Read from OTEL_TRACES_SAMPLER and
+          OTEL_TRACES_SAMPLER_ARG. Default [Some (parent_based always_on)], the
+          OTEL spec default. [None] samples everything.
+          @since NEXT_RELEASE *)
   _rest: rest;
 }
 (** Configuration.
@@ -133,6 +138,7 @@ type 'k make =
   ?retry_initial_delay_ms:float ->
   ?retry_max_delay_ms:float ->
   ?retry_backoff_multiplier:float ->
+  ?sampler:Opentelemetry.Trace_sampler.t ->
   'k
 (** A function that gathers all the values needed to construct a {!t}, and
     produces a ['k]. ['k] is typically a continuation used to construct a

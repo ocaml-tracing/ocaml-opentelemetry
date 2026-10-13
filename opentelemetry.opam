@@ -11,16 +11,17 @@ homepage: "https://github.com/ocaml-tracing/ocaml-opentelemetry"
 bug-reports: "https://github.com/ocaml-tracing/ocaml-opentelemetry/issues"
 depends: [
   "dune" {>= "3.11"}
-  "ocaml" {>= "4.08"}
+  "ocaml" {>= "4.14"}
   "ptime"
   "hmap"
   "odoc" {with-doc}
   "alcotest" {with-test}
+  "hegel" {with-test & >= "0.25.0"}
   "pbrt" {>= "4.0" & < "5.0"}
   "pbrt_yojson" {>= "4.0" & < "5.0"}
   "ambient-context" {>= "0.2"}
   "ocaml-lsp-server" {with-dev-setup}
-  "ocamlformat" {with-dev-setup & >= "0.27" & < "0.28"}
+  "ocamlformat" {with-dev-setup & = "0.28.1"}
   "mtime" {>= "1.4"}
 ]
 depopts: ["atomic" "trace" "thread-local-storage" "lwt" "eio" "picos"]

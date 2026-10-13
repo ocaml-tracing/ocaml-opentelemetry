@@ -1,4 +1,4 @@
-(* Mutex.protect was added in OCaml 5.1, but we want support back to 4.08 *)
+(* Mutex.protect was added in OCaml 5.1, but we support OCaml 4.14 *)
 (* cannot inline, otherwise flambda might move code around. (as per Stdlib) *)
 let[@inline never] protect m f =
   Mutex.lock m;

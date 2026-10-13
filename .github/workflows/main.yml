@@ -12,12 +12,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - ocaml-version: "4.08"
-            container: ghcr.io/ocaml-tracing/ocaml-opentelemetry/ci-4.08:latest
-            eio: false
           - ocaml-version: "4.14"
             container: ghcr.io/ocaml-tracing/ocaml-opentelemetry/ci-4.14:latest
             eio: false
+          - ocaml-version: "5.2"
+            container: ghcr.io/ocaml-tracing/ocaml-opentelemetry/ci-5.2:latest
+            eio: true
           - ocaml-version: "5.4"
             container: ghcr.io/ocaml-tracing/ocaml-opentelemetry/ci-5.4:latest
             eio: true
