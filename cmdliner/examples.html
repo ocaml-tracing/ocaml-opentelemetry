@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml"><head><title>examples (cmdliner.examples)</title><meta charset="utf-8"/><link rel="stylesheet" href="../_odoc-theme/odoc.css"/><meta name="generator" content="odoc 3.1.0"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="index.html">Up</a> – <a href="../index.html">Index</a> &#x00BB; <a href="index.html">cmdliner</a> &#x00BB; examples</nav><header class="odoc-preamble"><h1 id="examples"><a href="#examples" class="anchor"></a>Examples</h1><p>The examples are self-contained, cut and paste them in a file to play with them. See also the suggested <a href="cookbook.html#tip_src_structure" title="tip_src_structure">source code structure</a> and program <a href="cookbook.html#blueprints" title="blueprints">blueprints</a>.</p></header><div class="odoc-tocs"><nav class="odoc-toc odoc-local-toc"><ul><li><a href="#example_rm">A <code>rm</code> command</a></li><li><a href="#example_cp">A <code>cp</code> command</a></li><li><a href="#example_tail">A <code>tail</code> command</a></li><li><a href="#example_darcs">A <code>darcs</code> command</a></li></ul></nav></div><div class="odoc-content"><h2 id="example_rm"><a href="#example_rm" class="anchor"></a>A <code>rm</code> command</h2><p>We define the command line interface of an <code>rm</code> command with the synopsis:</p><pre>rm [OPTION]… FILE…</pre><p>The <code>-f</code>, <code>-i</code> and <code>-I</code> flags define the prompt behaviour of <code>rm</code>. It is represented in our program by the <code>prompt</code> type. If more than one of these flags is present on the command line the last one takes precedence.</p><p>To implement this behaviour we map the presence of these flags to values of the <code>prompt</code> type by using <a href="Cmdliner/Arg/index.html#val-vflag_all"><code>Cmdliner.Arg.vflag_all</code></a>.</p><p>This argument will contain all occurrences of the flag on the command line and we just take the <a href="Cmdliner/Arg/index.html#val-last"><code>Cmdliner.Arg.last</code></a> one to define our term value. If there is no occurrence the last value of the default list <code>[Always]</code> is taken. This means the default prompt behaviour is <code>Always</code>.</p><pre class="language-ocaml"><code>(* Implementation of the command, we just print the args. *)
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>examples (cmdliner.examples)</title><meta charset="utf-8"/><link rel="stylesheet" href="../_odoc-theme/odoc.css"/><meta name="generator" content="odoc 3.2.1"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="index.html">Up</a> – <a href="../index.html">Index</a> &#x00BB; <a href="index.html">cmdliner</a> &#x00BB; examples</nav><header class="odoc-preamble"><h1 id="examples"><a href="#examples" class="anchor"></a>Examples</h1><p>The examples are self-contained, cut and paste them in a file to play with them. See also the suggested <a href="cookbook.html#tip_src_structure" title="tip_src_structure">source code structure</a> and program <a href="cookbook.html#blueprints" title="blueprints">blueprints</a>.</p></header><div class="odoc-tocs"><nav class="odoc-toc odoc-local-toc"><ul><li><a href="#example_rm">A <code>rm</code> command</a></li><li><a href="#example_cp">A <code>cp</code> command</a></li><li><a href="#example_tail">A <code>tail</code> command</a></li><li><a href="#example_darcs">A <code>darcs</code> command</a></li></ul></nav></div><div class="odoc-content"><h2 id="example_rm"><a href="#example_rm" class="anchor"></a>A <code>rm</code> command</h2><p>We define the command line interface of an <code>rm</code> command with the synopsis:</p><pre>rm [OPTION]… FILE…</pre><p>The <code>-f</code>, <code>-i</code> and <code>-I</code> flags define the prompt behaviour of <code>rm</code>. It is represented in our program by the <code>prompt</code> type. If more than one of these flags is present on the command line the last one takes precedence.</p><p>To implement this behaviour we map the presence of these flags to values of the <code>prompt</code> type by using <a href="Cmdliner/Arg/index.html#val-vflag_all"><code>Cmdliner.Arg.vflag_all</code></a>.</p><p>This argument will contain all occurrences of the flag on the command line and we just take the <a href="Cmdliner/Arg/index.html#val-last"><code>Cmdliner.Arg.last</code></a> one to define our term value. If there is no occurrence the last value of the default list <code>[Always]</code> is taken. This means the default prompt behaviour is <code>Always</code>.</p><pre class="language-ocaml"><code>(* Implementation of the command, we just print the args. *)
 
 type prompt = Always | Once | Never
 let prompt_str = function
@@ -53,7 +53,7 @@ let rm_cmd =
     `S Manpage.s_bugs; `P &quot;Report bugs to &lt;bugs@example.org&gt;.&quot;;
     `S Manpage.s_see_also; `P &quot;$(b,rmdir)(1), $(b,unlink)(2)&quot; ]
   in
-  Cmd.make (Cmd.info &quot;rm&quot; ~version:&quot;v2.1.0&quot; ~doc ~man) @@
+  Cmd.make (Cmd.info &quot;rm&quot; ~version:&quot;v2.1.1&quot; ~doc ~man) @@
   let+ prompt and+ recursive and+ files in
   rm ~prompt ~recurse:recursive files
 
@@ -104,7 +104,7 @@ let cp_cmd =
     `S Manpage.s_bugs;
     `P &quot;Email them to &lt;bugs@example.org&gt;.&quot;; ]
   in
-  Cmd.make (Cmd.info &quot;cp&quot; ~version:&quot;v2.1.0&quot; ~doc ~man ~man_xrefs) @@
+  Cmd.make (Cmd.info &quot;cp&quot; ~version:&quot;v2.1.1&quot; ~doc ~man ~man_xrefs) @@
   Term.ret @@
   let+ verbose and+ recurse and+ force and+ srcs and+ dest in
   cp ~verbose ~recurse ~force srcs dest
@@ -188,7 +188,7 @@ let tail_cmd =
     `S Manpage.s_see_also;
     `P &quot;$(b,cat)(1), $(b,head)(1)&quot; ]
   in
-  Cmd.make (Cmd.info &quot;tail&quot; ~version:&quot;v2.1.0&quot; ~doc ~man) @@
+  Cmd.make (Cmd.info &quot;tail&quot; ~version:&quot;v2.1.1&quot; ~doc ~man) @@
   let+ lines and+ follow and+ verb and+ pid and+ files in
   tail ~lines ~follow ~verb ~pid files
 
@@ -338,7 +338,7 @@ let help_cmd =
 let main_cmd =
   let doc = &quot;a revision control system&quot; in
   let man = help_secs in
-  let info = Cmd.info &quot;darcs&quot; ~version:&quot;v2.1.0&quot; ~doc ~sdocs ~man in
+  let info = Cmd.info &quot;darcs&quot; ~version:&quot;v2.1.1&quot; ~doc ~sdocs ~man in
   let default = Term.(ret (const (fun _ -&gt; `Help (`Pager, None)) $ copts_t)) in
   Cmd.group info ~default [initialize_cmd; record_cmd; help_cmd]
 

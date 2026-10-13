@@ -81,7 +81,7 @@ let rm_cmd =
     `S Manpage.s_bugs; `P "Report bugs to <bugs@example.org>.";
     `S Manpage.s_see_also; `P "$(b,rmdir)(1), $(b,unlink)(2)" ]
   in
-  Cmd.make (Cmd.info "rm" ~version:"v2.1.0" ~doc ~man) @@
+  Cmd.make (Cmd.info "rm" ~version:"v2.1.1" ~doc ~man) @@
   let+ prompt and+ recursive and+ files in
   rm ~prompt ~recurse:recursive files
 
@@ -154,7 +154,7 @@ let cp_cmd =
     `S Manpage.s_bugs;
     `P "Email them to <bugs@example.org>."; ]
   in
-  Cmd.make (Cmd.info "cp" ~version:"v2.1.0" ~doc ~man ~man_xrefs) @@
+  Cmd.make (Cmd.info "cp" ~version:"v2.1.1" ~doc ~man ~man_xrefs) @@
   Term.ret @@
   let+ verbose and+ recurse and+ force and+ srcs and+ dest in
   cp ~verbose ~recurse ~force srcs dest
@@ -265,7 +265,7 @@ let tail_cmd =
     `S Manpage.s_see_also;
     `P "$(b,cat)(1), $(b,head)(1)" ]
   in
-  Cmd.make (Cmd.info "tail" ~version:"v2.1.0" ~doc ~man) @@
+  Cmd.make (Cmd.info "tail" ~version:"v2.1.1" ~doc ~man) @@
   let+ lines and+ follow and+ verb and+ pid and+ files in
   tail ~lines ~follow ~verb ~pid files
 
@@ -444,7 +444,7 @@ let help_cmd =
 let main_cmd =
   let doc = "a revision control system" in
   let man = help_secs in
-  let info = Cmd.info "darcs" ~version:"v2.1.0" ~doc ~sdocs ~man in
+  let info = Cmd.info "darcs" ~version:"v2.1.1" ~doc ~sdocs ~man in
   let default = Term.(ret (const (fun _ -> `Help (`Pager, None)) $ copts_t)) in
   Cmd.group info ~default [initialize_cmd; record_cmd; help_cmd]
 
