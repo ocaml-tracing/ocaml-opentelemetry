@@ -1,11 +1,24 @@
+## 0.92
+
+- raise minimum ocaml version to 4.14
+- bump gc metrics default interval to 30s
+- support head sampling (#132)
+  * add `Trace_flags`, must be passed in `span_ctx`
+  * cohttp: avoid duplicate traceparent and tracestate headers
+  * proper support for tracestate
+  * add `Trace_sampler`
+- modify `Meter_provider` registration system
+- faster random traceId/spanId (#133)
+- normalize `export_error` usage for all http backends; richer errors
+
 ## 0.91.1
 
 - fix: lazy init of random generators
-- fix: in trace, respect ~parent:P_none
+- fix: in trace, respect `~parent:P_none`
 
 ## 0.91
 
-- expose Self_debug.level_above
+- expose `Self_debug.level_above`
 - config: better defaults in Sdk, have batching enabled by default
 
 - better error message for otlp http failures
