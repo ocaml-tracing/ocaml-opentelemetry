@@ -37,6 +37,13 @@ module Extensions : sig
     | Ev_set_span_kind of Otrace.span * OTEL.Span_kind.t
     | Ev_set_span_status of Otrace.span * OTEL.Span_status.t
 
+  type Otrace.extension_parameter +=
+    | Sampler of Opentelemetry.Trace_sampler.t
+          (** [Trace.with_span ~params:[Sampler s]] overrides the global
+              {!Opentelemetry.Trace_sampler} if the span is a root. See
+              {!Opentelemetry.Trace_sampler.decide_current}.
+              @since NEXT_RELEASE *)
+
   type Otrace.metric +=
     | Metric_hist of OTEL.Metrics.histogram_data_point
     | Metric_sum_int of int

@@ -153,3 +153,18 @@ let () =
   check "always_on, parent, not random" S.always_on ~parent:Parent_sampled
     ~random:false;
   S.set_on_non_random_parent S.default_on_non_random_parent
+
+(* per-span [~sampler] override: applies to roots only *)
+let () =
+  S.set (Some S.(parent_based always_off));
+  let sampled sp = Trace_flags.is_sampled (Span.trace_flags sp) in
+  Tracer.with_ "off" (fun sp -> assert (not (sampled sp)));
+  Tracer.with_ ~sampler:S.always_on "root" (fun root ->
+      assert (sampled root);
+      Tracer.with_ "child" (fun sp -> assert (sampled sp)));
+  S.set (Some S.always_on);
+  Tracer.with_ ~sampler:S.always_off "root" (fun _ ->
+      (* child of an unsampled root: override ignored *)
+      Tracer.with_ ~sampler:S.always_on "child" (fun sp ->
+          assert (not (sampled sp))));
+  S.set None

@@ -16,6 +16,8 @@ module Extensions = struct
     | Ev_set_span_kind of Trace.span * OTEL.Span_kind.t
     | Ev_set_span_status of Trace.span * OTEL.Span_status.t
 
+  type Trace.extension_parameter += Sampler of OTEL.Trace_sampler.t
+
   type Trace.metric +=
     | Metric_hist of OTEL.Metrics.histogram_data_point
     | Metric_sum_int of int
@@ -61,7 +63,7 @@ open struct
   let k_span_ctx : OTEL.Span_ctx.t Ambient_context.Context.key =
     OTEL.Span_ctx.k_ambient
 
-  let enter_span () ~__FUNCTION__ ~__FILE__ ~__LINE__ ~level:_ ~params:_
+  let enter_span () ~__FUNCTION__ ~__FILE__ ~__LINE__ ~level:_ ~params
       ~(data : (_ * Trace.user_data) list) ~parent name : Trace.span =
     let start_time = OTEL.Clock.now_main () in
     let[@inline] parent_sampled_of_bool b : OTEL.Trace_sampler.parent =
@@ -92,9 +94,16 @@ open struct
             OTEL.Span_ctx.trace_state sp_ctx )
         | None -> OTEL.Trace_id.create (), true, None, No_parent, "")
     in
+    let sampler =
+      List.find_map
+        (function
+          | Sampler s -> Some s
+          | _ -> None)
+        params
+    in
     let sampled, trace_state =
-      OTEL.Trace_sampler.decide_current ~parent:sp_parent ~random ~trace_state
-        trace_id
+      OTEL.Trace_sampler.decide_current ?sampler ~parent:sp_parent ~random
+        ~trace_state trace_id
     in
     let trace_state =
       match trace_state with

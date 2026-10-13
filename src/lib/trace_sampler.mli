@@ -77,12 +77,18 @@ val set_on_non_random_parent : (Trace_id.t -> unit) -> unit
     {!default_on_non_random_parent}. Custom callbacks are not rate limited. *)
 
 val decide_current :
+  ?sampler:t ->
   parent:parent ->
   random:bool ->
   trace_state:string ->
   Trace_id.t ->
   bool * string
-(** {!decide} with the current global sampler, counted in {!self_metrics} *)
+(** {!decide} with the current global sampler, counted in {!self_metrics}.
+
+    @param sampler
+      overrides the global sampler for root spans only (as
+      [parent_based sampler]): spans with a parent follow the parent's decision.
+    @since NEXT_RELEASE *)
 
 val self_metrics : now:Timestamp_ns.t -> Metrics.t list
 (** [otel.sdk.span.sampled] and [otel.sdk.span.not_sampled] *)

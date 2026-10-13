@@ -122,12 +122,13 @@ let rec decide (self : t) ~(parent : parent) ~(random : bool)
     else
       false, trace_state
 
-let decide_current ~parent ~random ~trace_state (tid : Trace_id.t) :
+let decide_current ?sampler ~parent ~random ~trace_state (tid : Trace_id.t) :
     bool * string =
   let ((sampled, _) as r) =
-    match get () with
-    | Some s -> decide s ~parent ~random ~trace_state tid
-    | None -> true, trace_state
+    match sampler, get () with
+    | Some s, _ -> decide (Parent_based s) ~parent ~random ~trace_state tid
+    | None, Some s -> decide s ~parent ~random ~trace_state tid
+    | None, None -> true, trace_state
   in
   Atomic.incr
     (if sampled then

@@ -56,8 +56,8 @@ let[@inline] emit (span : Span.t) : unit = Emitter.emit (get ()).emit [ span ]
 
 (** Helper to implement {!with_} and similar functions *)
 let with_thunk_and_finally (self : Tracer.t) ?(force_new_trace_id = false)
-    ?trace_state ?(attrs : (string * [< Value.t ]) list = []) ?kind ?trace_id
-    ?parent ?parent_ctx ?links name cb =
+    ?sampler ?trace_state ?(attrs : (string * [< Value.t ]) list = []) ?kind
+    ?trace_id ?parent ?parent_ctx ?links name cb =
   let parent =
     match parent, parent_ctx with
     | Some _, _ | None, Some _ -> parent
@@ -109,7 +109,7 @@ let with_thunk_and_finally (self : Tracer.t) ?(force_new_trace_id = false)
       | None, None -> No_parent, ""
     in
     let trace_state = Option.value trace_state ~default:parent_ts in
-    Trace_sampler.decide_current ~parent ~random ~trace_state trace_id
+    Trace_sampler.decide_current ?sampler ~parent ~random ~trace_state trace_id
   in
   let trace_state =
     match trace_state with
@@ -169,15 +169,20 @@ let with_thunk_and_finally (self : Tracer.t) ?(force_new_trace_id = false)
       if true (default false), the span will not use a ambient scope, the
       [~scope] argument, nor [~trace_id], but will instead always create fresh
       identifiers for this span
+    @param sampler
+      overrides the global {!Trace_sampler} if this span is a root (no parent,
+      ambient or explicit); ignored otherwise, as the span follows its parent's
+      decision.
+    @since NEXT_RELEASE
     @param parent_ctx
       parent span context, e.g. from an incoming [traceparent]. [~parent] takes
-      precedence; both take precedence over the ambient span. Since NEXT_RELEASE
-*)
-let with_ ?(tracer = default_tracer) ?force_new_trace_id ?trace_state ?attrs
-    ?kind ?trace_id ?parent ?parent_ctx ?links name (cb : Span.t -> 'a) : 'a =
+      precedence; both take precedence over the ambient span. Since NEXT_RELEASE *)
+let with_ ?(tracer = default_tracer) ?force_new_trace_id ?sampler ?trace_state
+    ?attrs ?kind ?trace_id ?parent ?parent_ctx ?links name (cb : Span.t -> 'a) :
+    'a =
   let thunk, finally =
-    with_thunk_and_finally tracer ?force_new_trace_id ?trace_state ?attrs ?kind
-      ?trace_id ?parent ?parent_ctx ?links name cb
+    with_thunk_and_finally tracer ?force_new_trace_id ?sampler ?trace_state
+      ?attrs ?kind ?trace_id ?parent ?parent_ctx ?links name cb
   in
   try
     let rv = thunk () in
