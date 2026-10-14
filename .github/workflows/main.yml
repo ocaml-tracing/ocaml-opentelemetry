@@ -45,3 +45,32 @@ jobs:
 
       - name: Run tests
         run: opam exec -- dune build @runtest
+
+  # try to catch missing deps, like opam-ci
+  check-depopts:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: "5.4"
+          dune-cache: true
+
+      - name: pin
+        run: opam pin add -y -n .
+
+      - name: install-no-depopts
+        run: |
+          opam install -y opentelemetry opentelemetry-client
+          if opam list --installed --short | grep -qx lwt; then
+            echo "lwt should not be installed at this point"; exit 1
+          fi
+
+      - name: install-with-depopts
+        run: |
+          opam install -y -t opentelemetry-client-cohttp-lwt opentelemetry-client-ocurl-lwt opentelemetry-logs
