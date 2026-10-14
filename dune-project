@@ -71,6 +71,7 @@
    (and
     (>= 0.2)
     (< 0.3))))
+ (depopts lwt ambient-context-lwt) ; for opentelemetry-client.lwt
  (tags
   (tracing opentelemetry sdk)))
 
