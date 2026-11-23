@@ -4,12 +4,23 @@ let[@inline] to_bytes self = self
 
 let dummy : t = Bytes.make 16 '\x00'
 
-let create () : t =
+let default_create_function () : t =
   let b = Rand_bytes.rand_bytes_16 () in
   assert (Bytes.length b = 16);
   (* make sure the identifier is not all 0, which is a dummy identifier. *)
   Bytes.set b 0 (Char.unsafe_chr (Char.code (Bytes.get b 0) lor 1));
   b
+
+open struct
+  let create_fun_ = ref default_create_function
+end
+
+let[@inline] create () =
+  let id = !create_fun_ () in
+  assert (Bytes.length id = 16);
+  id
+
+let set_create_function f = create_fun_ := f
 
 let[@inline] of_bytes b =
   if Bytes.length b = 16 then
